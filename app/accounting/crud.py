@@ -8,7 +8,7 @@ from typing import List
 from typing import List
 from sqlalchemy.sql import func
 
- #### CHART OF ACCOUNT RESOURCES
+#### CHART OF ACCOUNT RESOURCES
 
 # Get All Chart of Account
 def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
@@ -63,7 +63,8 @@ def delete_chart(db: Session, id: int):
         db.delete(db_chart)
         db.commit()
         return db_chart
- #### JOURNAL ENTRY RESOURCES
+    
+#### JOURNAL ENTRY RESOURCES
 
 # Get All Journal Entries
 def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
@@ -99,11 +100,14 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
         raise HTTPException(status_code=404, detail="Journal Entry not found.")
 
     if db_journal is not None:
-        db_journal.debit_account_type = journal.debit_account_type
-        db_journal.credit_account_type = journal.credit_account_type
+        db_journal.supplier_name = journal.supplier_name
+        db_journal.document_no = journal.document_no
+        db_journal.debit_account_name = journal.debit_account_name
+        db_journal.credit_account_name = journal.credit_account_name
         db_journal.debit = journal.debit
         db_journal.credit = journal.credit
         db_journal.notes = journal.notes
+        db_journal.is_supplier = journal.is_supplier
 
         db.commit()
         db.refresh(db_journal)
@@ -121,3 +125,65 @@ def delete_journal(db: Session, id: int):
         db.commit()
         return db_journal
     
+#### SUPPLIER RESOURCES
+
+# Get All Suppliers
+def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+    supplier_db = db.query(models.Supplier)
+    
+    sortable_columns = {
+        "id": models.Supplier.id,
+    }
+
+    sort = (
+        sortable_columns.get("id").asc()
+        if sort_direction == "desc"
+        else sortable_columns.get("id").desc()
+    )
+
+    filtered_result = supplier_db.order_by(
+        sort).offset(skip).limit(limit).all()
+    return filtered_result
+
+# Create Supplier
+def create_supplier(db: Session, supplier : schemas.SupplierCreate):
+    db_supplier = models.Supplier(**supplier .dict())
+    db.add(db_supplier)
+    db.commit()
+    db.refresh(db_supplier)
+    return db_supplier 
+
+# Update Supplier
+def update_supplier(db: Session, id: int, supplier: schemas.SupplierCreate):
+    db_supplier = db.query(models.Supplier).get(id)
+
+    if db_supplier is None:
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+
+    if db_supplier is not None:
+        db_supplier.business_type = supplier.business_type
+        db_supplier.first_name = supplier.first_name
+        db_supplier.last_name = supplier.last_name
+        db_supplier.email = supplier.email
+        db_supplier.contact_number = supplier.contact_number
+        db_supplier.tel_number = supplier.tel_number
+        db_supplier.address = supplier.address
+        db_supplier.tin = supplier.tin
+        db_supplier.sec_registration = supplier.sec_registration
+        db_supplier.dti_registration = supplier.dti_registration
+
+        db.commit()
+        db.refresh(db_supplier)
+        return db_supplier
+    
+# Delete Supplier
+def delete_supplier(db: Session, id: int):
+    db_supplier = db.query(models.Supplier).get(id)
+
+    if db_supplier is None:
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+
+    if db_supplier is not None:
+        db.delete(db_supplier)
+        db.commit()
+        return db_supplier

@@ -5,7 +5,7 @@ from app.accounting import crud, schemas
 from app.accounting.database import SessionLocal
 from typing import List
 
-router = APIRouter(prefix="/charts", tags=["Chart of Accounts Resources"])
+router = APIRouter(prefix="/charts", tags=["Chart of Account Resources"])
 
 # Dependency
 def get_db():
@@ -22,7 +22,7 @@ async def read_charts(db: Session = Depends(get_db), sort_direction: str = "desc
     return crud.get_charts(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
 # Get All Chart of Account {account_names}
-@router.get("/account_names", response_model=List)
+@router.get("/account_names/", response_model=List)
 async def get_account_names(db: Session = Depends(get_db)) -> List:
     """ List Chart of Accounts {account_names} """
     charts = crud.get_charts(db=db)

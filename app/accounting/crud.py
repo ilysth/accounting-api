@@ -4,9 +4,7 @@ from sqlalchemy.sql.functions import func
 from app.accounting import crud, schemas, models
 from fastapi import HTTPException
 from typing import List
-
-from typing import List
-from sqlalchemy.sql import func
+from datetime import datetime, timedelta
 
 #### CHART OF ACCOUNT RESOURCES
 
@@ -83,6 +81,50 @@ def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit
     filtered_result = journals_db.order_by(
         sort).offset(skip).limit(limit).all()
     return filtered_result   
+
+def get_journals_by_date(db: Session, from_date: str, to_date: str, account_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+    journals_db = db.query(models.Journal)
+
+    sortable_columns = {
+        "id": models.Journal.id,
+    }
+
+    sort = (
+        sortable_columns.get("id").asc()
+        if sort_direction == "desc"
+        else sortable_columns.get("id").desc()
+    )
+
+    if from_date == to_date:
+        # Filter for a single day
+        date = datetime.strptime(from_date, "%Y-%m-%d").date()
+        next_day = date + timedelta(days=1)
+        filtered_result = journals_db.filter(
+            models.Journal.date >= date,
+            models.Journal.date < next_day
+        ).order_by(sort).offset(skip).limit(limit).all()
+    else:
+        # Filter for a date range
+        from_date = datetime.strptime(from_date, "%Y-%m-%d")
+        to_date = datetime.strptime(to_date, "%Y-%m-%d")
+
+        filtered_result = journals_db.filter(
+            models.Journal.date >= from_date,
+            models.Journal.date <= to_date + timedelta(days=1)  # Adjusted the filter condition
+        ).order_by(sort).offset(skip).limit(limit).all()
+
+    if account_name == "All":
+        return filtered_result
+    else:
+        # Filtered by account name
+        # im trying to do a one liner here "the commented code below" but it dont give me the filtered result i want
+        # filtered_result = [result for result in filtered_result if result.debit_account_name or result.credit_account_name == account_name]
+        filtered_result_c = [filtered_result for filtered_result in filtered_result if filtered_result.credit_account_name == account_name]
+        filtered_result_d = [filtered_result for filtered_result in filtered_result if filtered_result.debit_account_name == account_name]
+        
+        filtered_result = filtered_result_c + filtered_result_d
+
+        return filtered_result
 
 # Create Journal Entry
 def create_journal(db: Session, journal : schemas.JournalCreate):

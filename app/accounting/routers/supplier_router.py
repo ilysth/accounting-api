@@ -15,12 +15,6 @@ def get_db():
     finally:
         db.close()
 
-# Get All Suppliers
-@router.get("/")
-async def read_suppliers(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):
-    """ List Suppliers. """
-    return crud.get_suppliers(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
-
 # Get All Suppliers {Names}
 @router.get("/names/", response_model=List)
 async def get_names(db: Session = Depends(get_db)) -> List:

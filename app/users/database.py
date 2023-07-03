@@ -7,7 +7,7 @@ config = dotenv_values('env/.env')
 mysql_password = config['MYSQL_ROOT_PASSWORD']
 mysql_host = config['MYSQL_HOST']
 mysql_port = config['MYSQL_PORT']
-db_name = config['DB_NAME_ACCOUNTING']
+db_name = config['DB_NAME_USER']
 
 SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://root:{mysql_password}@{mysql_host}:{mysql_port}/"
 SQLALCHEMY_DATABASE_URL_W_NAME = f"mysql+mysqlconnector://root:{mysql_password}@{mysql_host}:{mysql_port}/{db_name}"

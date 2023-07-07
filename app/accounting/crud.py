@@ -82,7 +82,7 @@ def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit
         sort).offset(skip).limit(limit).all()
     return filtered_result   
 
-def get_journals_by_date(db: Session, from_date: str, to_date: str, account_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     journals_db = db.query(models.Journal)
 
     sortable_columns = {
@@ -113,18 +113,17 @@ def get_journals_by_date(db: Session, from_date: str, to_date: str, account_name
             models.Journal.date <= to_date + timedelta(days=1)  # Adjusted the filter condition
         ).order_by(sort).offset(skip).limit(limit).all()
 
-    if account_name == "All":
-        return filtered_result
-    else:
-        # Filtered by account name
-        # im trying to do a one liner here "the commented code below" but it dont give me the filtered result i want
-        # filtered_result = [result for result in filtered_result if result.debit_account_name or result.credit_account_name == account_name]
-        filtered_result_c = [filtered_result for filtered_result in filtered_result if filtered_result.credit_account_name == account_name]
-        filtered_result_d = [filtered_result for filtered_result in filtered_result if filtered_result.debit_account_name == account_name]
-        
-        filtered_result = filtered_result_c + filtered_result_d
+    # Filtered by account name
+    if not account_name == "All":
+        filtered_result = [result for result in filtered_result if result.debit_account_name == account_name or result.credit_account_name == account_name]
+    
+    # if not supplier_name == "All":
+    #     filtered_result = [result for result in filtered_result if result.supplier_name == supplier_name]
+    
+    # if filtered_result is None:
+    #     return filtered_result
 
-        return filtered_result
+    return filtered_result
 
 # Create Journal Entry
 def create_journal(db: Session, journal : schemas.JournalCreate):

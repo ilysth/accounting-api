@@ -82,7 +82,7 @@ def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit
         sort).offset(skip).limit(limit).all()
     return filtered_result   
 
-def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_name: str = "All", supplier_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     journals_db = db.query(models.Journal)
 
     sortable_columns = {
@@ -117,11 +117,8 @@ def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_na
     if not account_name == "All":
         filtered_result = [result for result in filtered_result if result.debit_account_name == account_name or result.credit_account_name == account_name]
     
-    # if not supplier_name == "All":
-    #     filtered_result = [result for result in filtered_result if result.supplier_name == supplier_name]
-    
-    # if filtered_result is None:
-    #     return filtered_result
+    if not supplier_name == "All":
+        filtered_result = [result for result in filtered_result if result.supplier_name == supplier_name]
 
     return filtered_result
 
@@ -141,6 +138,7 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
         raise HTTPException(status_code=404, detail="Journal Entry not found.")
 
     if db_journal is not None:
+        db_journal.date = journal.date
         db_journal.supplier_name = journal.supplier_name
         db_journal.document_no = journal.document_no
         db_journal.debit_account_name = journal.debit_account_name
@@ -228,3 +226,37 @@ def delete_supplier(db: Session, id: int):
         db.delete(db_supplier)
         db.commit()
         return db_supplier
+    
+# Get Latest Balance Debit
+def get_latest_debit_balance(db: Session):
+    balance_debit_db = db.query(models.Debit).order_by(models.Debit.created_at.desc()).first()
+
+    if balance_debit_db is None:
+        raise HTTPException(status_code=404, detail="Not found.")
+
+    return balance_debit_db
+   
+# Create Debit Balance
+def create_debit(db: Session, debit: schemas.DebitCreate):
+    db_debit = models.Debit(**debit.dict())
+    db.add(db_debit)
+    db.commit()
+    db.refresh(db_debit)
+    return db_debit
+    
+# Get Latest Balance Credit
+def get_latest_credit_balance(db: Session):
+    balance_credit_db = db.query(models.Credit).order_by(models.Credit.created_at.desc()).first()
+
+    if balance_credit_db is None:
+        raise HTTPException(status_code=404, detail="Not found.")
+ 
+    return balance_credit_db
+
+# Create Credit Balance
+def create_credit(db: Session, credit: schemas.CreditCreate):
+    db_credit = models.Credit(**credit.dict())
+    db.add(db_credit)
+    db.commit()
+    db.refresh(db_credit)
+    return db_credit

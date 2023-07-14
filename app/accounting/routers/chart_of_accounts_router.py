@@ -27,10 +27,10 @@ async def get_account_names(db: Session = Depends(get_db)) -> List:
     """ List Chart of Accounts {account_names} """
     charts = crud.get_charts(db=db)
 
-    # Exclude charts with is_deleted = 1
-    filtered_chart = [chart for chart in charts if chart.is_deleted != 1]
+    # # Exclude charts with is_deleted = 1
+    # filtered_chart = [chart for chart in charts if chart.is_deleted != 1]
 
-    return [chart.account_name for chart in filtered_chart]
+    return [chart.account_name for chart in charts]
 
 # Create Chart of Account
 @router.post("/")

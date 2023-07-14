@@ -24,7 +24,7 @@ async def read_journals(db: Session = Depends(get_db), sort_direction: str = "de
 
 # Get All Journal Entry filtered by dates and account name
 @router.get("/filter/")
-async def read_journals_by_filter(db: Session = Depends(get_db), from_date: Optional[str] = None, to_date: Optional[str] = None, account_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+async def read_journals_by_filter(db: Session = Depends(get_db), from_date: Optional[str] = None, to_date: Optional[str] = None, account_name: str = "All", supplier_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     """List Journal Entry."""
 
     try:
@@ -32,6 +32,7 @@ async def read_journals_by_filter(db: Session = Depends(get_db), from_date: Opti
                 db=db,
                 from_date=from_date,
                 to_date=to_date,
+                supplier_name=supplier_name,
                 account_name=account_name,
                 sort_direction=sort_direction,
                 skip=skip,

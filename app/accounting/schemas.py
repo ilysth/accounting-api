@@ -7,7 +7,6 @@ class ChartBase(BaseModel):
     account_name: str
     account_type: str
     report_type: str
-    is_deleted: int
 
 
 class ChartCreate(ChartBase):
@@ -53,8 +52,8 @@ class SupplierBase(BaseModel):
     tel_number: str
     address: str
     tin: str
-    sec_registration: str
-    dti_registration: str
+    sec: str
+    dti: str
 
 
 class SupplierCreate(SupplierBase):
@@ -62,6 +61,36 @@ class SupplierCreate(SupplierBase):
 
 
 class Supplier(SupplierBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+
+class DebitBase(BaseModel):
+    name: str
+    debit: float
+
+class DebitCreate(DebitBase):
+    pass
+
+
+class Debit(DebitBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+
+class CreditBase(BaseModel):
+    name: str
+    credit: float
+
+class CreditCreate(CreditBase):
+    pass
+
+
+class Credit(CreditBase):
     id: int
 
     class Config:

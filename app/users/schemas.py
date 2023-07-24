@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class UsersBase(BaseModel):
+class UserBase(BaseModel):
     username: str
     password: str
     first_name: str
@@ -11,11 +11,11 @@ class UsersBase(BaseModel):
     role: int
     creation_update: Optional[datetime] = None
 
-class UsersCreate(UsersBase):
+class UserCreate(UserBase):
     pass
 
 
-class Users(UsersBase):
+class User(UserBase):
     id: int
 
     class Config:
@@ -24,6 +24,18 @@ class Users(UsersBase):
 class UserLogin(BaseModel):
     username: str
     password: str
+    first_name: str
+    last_name: str
+    role: int
 
     class Config:
         orm_mode = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: Optional[str] = None

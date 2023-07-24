@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from app.users.database import SessionLocal
 from app.users.routers import users_router
-from app.users import crud, schemas
 
 app = FastAPI(title="APP Features", description="App Integration Resources")
 

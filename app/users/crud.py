@@ -1,43 +1,40 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import and_, or_
-from sqlalchemy.sql.functions import func
-from app.users import crud, schemas, models
+from app.users import schemas, models
 from fastapi import HTTPException
-from typing import List
 from passlib.hash import bcrypt
 
-# def get_user_from_db(db: Session, username: str):
-#     db_user = db.query(models.Users).filter(models.Users.username == username).first()
+def get_user_from_db(db: Session, username: str):
+    db_user = db.query(models.User).filter(models.User.username == username).first()
 
-#     return db_user
+    return db_user
 
-# def verify_password(plain_password, hashed_password):
-#     return bcrypt.verify(plain_password, hashed_password)
+def verify_password(plain_password, hashed_password):
+    return bcrypt.verify(plain_password, hashed_password)
 
-# def login(username: str, password: str, db: Session):
-#     # Retrieve the user's record from the database based on their username or email
-#     user = get_user_from_db(username=username, db=db)
+def login(username: str, password: str, db: Session):
+    # Retrieve the user's record from the database based on their username or email
+    user = get_user_from_db(username=username, db=db)
 
-#     return user
-#     # if user is None:
-#     #     raise HTTPException(status_code=404, detail="User not found.")
-
-#     # # Verify the password
-#     # if verify_password(password, user.password):
-#     #     return db.query(models.Users).filter(models.Users.username == username, models.Users.password == password).first()
-
-#     # raise HTTPException(status_code=404, detail="Incorrect credentials.")
-
-def login(db: Session, user: schemas.UserLogin):
-    username = user.username
-    password = user.password
-    return db.query(models.Users).filter(models.Users.username == username, models.Users.password == password).first()
-
+    # Return user
+    if user is None:
+        raise HTTPException(status_code=404, detail="Incorrect username or password")
+    
+    # Verify the password
+    if verify_password(password, user.password):
+        return user
+    else:
+        raise HTTPException(status_code=404, detail="Incorrect username or password")
+    
 
 # Create User
-def create_user(db: Session, user: schemas.UsersCreate):
+def create_user(db: Session, user: schemas.UserCreate):
+    db_user_check = get_user_from_db(username=user.username , db=db)
+    
+    if db_user_check:
+        raise HTTPException(status_code=404, detail="Username already taken")
+    
     hashed_password = bcrypt.hash(user.password)  # Hash the password
-    db_user = models.Users(
+    db_user = models.User(
         username=user.username,
         password=hashed_password,
         role=user.role,

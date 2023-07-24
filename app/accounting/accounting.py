@@ -1,8 +1,6 @@
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
 from app.accounting.database import SessionLocal
 from app.accounting.routers import chart_of_accounts_router, journal_entry_router, supplier_router, balance_router
-from app.accounting import crud, schemas
 
 app = FastAPI(title="APP Features", description="App Integration Resources")
 

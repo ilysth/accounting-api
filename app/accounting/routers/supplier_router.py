@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from fastapi.encoders import jsonable_encoder
 from app.accounting import crud, schemas
 from app.accounting.database import SessionLocal
 from typing import List
@@ -15,6 +14,7 @@ def get_db():
     finally:
         db.close()
 
+# Get All Suppliers
 @router.get("/")
 async def read_supplier(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     """ List Supplier. """
@@ -43,12 +43,13 @@ async def create_supplier(supplier: schemas.SupplierCreate, db: Session = Depend
     """ Add Supplier. """
     return crud.create_supplier(db=db, supplier=supplier)
 
+# Update Supplier
 @router.put("/{id}", response_model=schemas.Supplier)
 async def update_supplier(supplier: schemas.SupplierCreate, id: int, db: Session = Depends(get_db)):
     """ Update Supplier """
     return crud.update_supplier(db=db, id=id, supplier=supplier)
 
-# Remove Journal Entry
+# Remove Supplier
 @router.delete("/{id}", response_model=schemas.Supplier)
 async def delete_supplier(id: int, db: Session = Depends(get_db)):
     """ Remove Supplier """

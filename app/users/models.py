@@ -1,11 +1,10 @@
 import datetime
-from sqlalchemy.sql.sqltypes import Date
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime
 
 from app.users.database import Base
 
 
-class Users(Base):
+class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)

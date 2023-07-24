@@ -1,9 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import and_, or_
-from sqlalchemy.sql.functions import func
-from app.accounting import crud, schemas, models
+from app.accounting import schemas, models
 from fastapi import HTTPException
-from typing import List
 from datetime import datetime, timedelta
 
 #### CHART OF ACCOUNT RESOURCES

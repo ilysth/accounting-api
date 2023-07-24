@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from fastapi.encoders import jsonable_encoder
 from app.accounting import crud, schemas
 from app.accounting.database import SessionLocal
 from typing import List
@@ -27,9 +26,6 @@ async def get_account_names(db: Session = Depends(get_db)) -> List:
     """ List Chart of Accounts {account_names} """
     charts = crud.get_charts(db=db)
 
-    # # Exclude charts with is_deleted = 1
-    # filtered_chart = [chart for chart in charts if chart.is_deleted != 1]
-
     return [chart.account_name for chart in charts]
 
 # Create Chart of Account
@@ -41,11 +37,11 @@ async def create_chart(chart: schemas.ChartCreate, db: Session = Depends(get_db)
 # Update Chart of Account
 @router.put("/{id}", response_model=schemas.Chart)
 async def update_chart(chart: schemas.ChartCreate, id: int, db: Session = Depends(get_db)):
-    """ Update ... """
+    """ Update Account """
     return crud.update_chart(db=db, id=id, chart=chart)
 
 # Remove Chart of Account
 @router.delete("/{id}", response_model=schemas.Chart)
 async def delete_chart(id: int, db: Session = Depends(get_db)):
-    """ Remove ... """
+    """ Remove Account """
     return crud.delete_chart(db=db, id=id)

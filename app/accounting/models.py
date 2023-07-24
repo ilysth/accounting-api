@@ -1,6 +1,5 @@
 import datetime
-from sqlalchemy.sql.sqltypes import Date
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Float
 
 from app.accounting.database import Base
 

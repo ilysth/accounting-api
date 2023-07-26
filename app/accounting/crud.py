@@ -79,7 +79,7 @@ def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit
         sort).offset(skip).limit(limit).all()
     return filtered_result   
 
-def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_name: str = "All", supplier_name: str = "All", sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_id: int = 0, supplier_id: int = 0, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     journals_db = db.query(models.Journal)
 
     sortable_columns = {
@@ -111,11 +111,11 @@ def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_na
         ).order_by(sort).offset(skip).limit(limit).all()
 
     # Filtered by account name
-    if not account_name == "All":
-        filtered_result = [result for result in filtered_result if result.debit_account_name == account_name or result.credit_account_name == account_name]
+    if not account_id == 0:
+        filtered_result = [result for result in filtered_result if result.debit_acct_id == account_id or result.credit_acct_id == account_id]
     
-    if not supplier_name == "All":
-        filtered_result = [result for result in filtered_result if result.supplier_name == supplier_name]
+    if not supplier_id == 0:
+        filtered_result = [result for result in filtered_result if result.supplier_id == supplier_id]
 
     return filtered_result
 
@@ -205,8 +205,8 @@ def update_supplier(db: Session, id: int, supplier: schemas.SupplierCreate):
         db_supplier.tel_number = supplier.tel_number
         db_supplier.address = supplier.address
         db_supplier.tin = supplier.tin
-        db_supplier.sec_registration = supplier.sec_registration
-        db_supplier.dti_registration = supplier.dti_registration
+        db_supplier.sec_registration = supplier.sec
+        db_supplier.dti_registration = supplier.dti
 
         db.commit()
         db.refresh(db_supplier)

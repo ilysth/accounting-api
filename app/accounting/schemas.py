@@ -23,8 +23,8 @@ class Chart(ChartBase):
 class JournalBase(BaseModel):
     supplier_id: Optional[int] = None
     document_no: str
-    debit_acct_id: int
-    credit_acct_id: int
+    debit_acct_id: Optional[int] = None
+    credit_acct_id: Optional[int] = None
     debit: float
     credit: float
     date: Optional[datetime] = None

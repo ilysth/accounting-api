@@ -50,10 +50,10 @@ async def get_account_names(db: Session = Depends(get_db)) -> List:
     journal = crud.get_journals(db=db)
 
     # Debit List
-    debit_list = [journal.debit_account_name for journal in journal]
+    debit_list = [journal.debit_acct_id for journal in journal]
 
     # Credit List
-    credit_list = [journal.credit_account_name for journal in journal]
+    credit_list = [journal.credit_acct_id for journal in journal]
 
     # All
     account_names_list = debit_list + credit_list

@@ -18,10 +18,10 @@ class Journal(Base):
     __tablename__ = "journal_entry"
 
     id = Column(Integer, primary_key=True, index=True)
-    supplier_name = Column(String, default="NONE")
+    supplier_id = Column(Integer, nullable=True)
     document_no = Column(String, default="NONE")
-    debit_acct_id = Column(Integer, default=0)
-    credit_acct_id = Column(Integer, default=0)
+    debit_acct_id = Column(Integer, nullable=True)
+    credit_acct_id = Column(Integer, nullable=True)
     debit = Column(Float, default="NONE")
     credit = Column(Float, default="NONE")
     date = Column(DateTime, nullable=True)

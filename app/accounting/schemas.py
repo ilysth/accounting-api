@@ -21,7 +21,7 @@ class Chart(ChartBase):
 
 
 class JournalBase(BaseModel):
-    supplier_name: str
+    supplier_id: Optional[int] = None
     document_no: str
     debit_acct_id: int
     credit_acct_id: int

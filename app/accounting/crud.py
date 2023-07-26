@@ -136,10 +136,10 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
 
     if db_journal is not None:
         db_journal.date = journal.date
-        db_journal.supplier_name = journal.supplier_name
+        db_journal.supplier_id = journal.supplier_id
         db_journal.document_no = journal.document_no
-        db_journal.debit_account_name = journal.debit_account_name
-        db_journal.credit_account_name = journal.credit_account_name
+        db_journal.debit_acct_id = journal.debit_acct_id
+        db_journal.credit_acct_id = journal.credit_acct_id
         db_journal.debit = journal.debit
         db_journal.credit = journal.credit
         db_journal.notes = journal.notes

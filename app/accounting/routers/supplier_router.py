@@ -20,23 +20,6 @@ async def read_supplier(db: Session = Depends(get_db), sort_direction: str = "de
     """ List Supplier. """
     return crud.get_suppliers(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
-# Get All Suppliers {Names}
-@router.get("/names/", response_model=List)
-async def get_names(db: Session = Depends(get_db)) -> List:
-    """ List Supplier Names """
-    supplier = crud.get_suppliers(db=db)
-
-    # Last Name List
-    last_name = [supplier.last_name for supplier in supplier]
-
-    # First Name List
-    first_name = [supplier.first_name for supplier in supplier]
-
-    # Names (Lname, Fname)
-    names_list = [f"{first} {last}" for first, last in zip(first_name, last_name)]
-
-    return names_list
-
 # Create Supplier
 @router.post("/")
 async def create_supplier(supplier: schemas.SupplierCreate, db: Session = Depends(get_db)):

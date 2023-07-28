@@ -12,10 +12,11 @@ app.mount("/accounting", accounting.app)
 app.mount("/users", users.app)
 app.mount("/oauth", oauth.app)
 
-# config_paths = [
-#     'app/accounting/alembic.ini',
-# ]
+config_paths = [
+    'app/accounting/alembic.ini',
+    'app/users/alembic.ini',
+]
 
-# for config_path in config_paths:
-#     alembic_cfg = Config(config_path)
-#     command.upgrade(alembic_cfg, 'head')
+for config_path in config_paths:
+    alembic_cfg = Config(config_path)
+    command.upgrade(alembic_cfg, 'head')

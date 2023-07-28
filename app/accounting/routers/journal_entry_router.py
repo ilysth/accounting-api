@@ -42,39 +42,6 @@ async def read_journals_by_filter(db: Session = Depends(get_db), from_date: Opti
         if from_date and to_date is None:
             raise HTTPException(status_code=404, detail="from_date or to_date should not be empty.")
 
-
-# Get All Journal Entry {account_names}
-@router.get("/account_names/", response_model=List)
-async def get_account_names(db: Session = Depends(get_db)) -> List:
-    """ List Journal Enrty {account_names} """
-    journal = crud.get_journals(db=db)
-
-    # Debit List
-    debit_list = [journal.debit_acct_id for journal in journal]
-
-    # Credit List
-    credit_list = [journal.credit_acct_id for journal in journal]
-
-    # All
-    account_names_list = debit_list + credit_list
-
-    # Remove Duplicates in the List
-    filtered_list = list(set(account_names_list))
-
-    return filtered_list
-
-# Get All Journal Entry {account_names}
-@router.get("/supplier_names/", response_model=List)
-async def get_supplier_names(db: Session = Depends(get_db)) -> List:
-    """ List Journal Enrty {supplier_names} """
-    journal = crud.get_journals(db=db)
-
-
-    name_list = [journal.supplier_name for journal in journal]
-    cleaned_names = list(set(name for name in name_list if name))
-    
-    return cleaned_names
-
 # Create Journal Entry
 @router.post("/")
 async def create_journal(journal: schemas.JournalCreate, db: Session = Depends(get_db)):

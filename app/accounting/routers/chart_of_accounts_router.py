@@ -20,14 +20,6 @@ async def read_charts(db: Session = Depends(get_db), sort_direction: str = "desc
     """ List Chart of Accounts. """
     return crud.get_charts(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
-# Get All Chart of Account {account_names}
-@router.get("/account_names/", response_model=List)
-async def get_account_names(db: Session = Depends(get_db)) -> List:
-    """ List Chart of Accounts {account_names} """
-    charts = crud.get_charts(db=db)
-
-    return [chart.account_name for chart in charts]
-
 # Create Chart of Account
 @router.post("/")
 async def create_chart(chart: schemas.ChartCreate, db: Session = Depends(get_db)):

@@ -1,17 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from app.database import DatabaseSessionMaker
 from app.users import crud, schemas
-from app.users.database import SessionLocal
 
 router = APIRouter(prefix="/users", tags=["Users Resources"])
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+get_db = DatabaseSessionMaker("shydans_db")
 
 # # Get All Suppliers
 @router.get("/login/")

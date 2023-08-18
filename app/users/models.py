@@ -1,17 +1,17 @@
 import datetime
 from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
 
-from app.users.database import Base
-
+Base = declarative_base()
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "dashboard_users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, default="NONE")
-    password = Column(String, default="NONE")
-    first_name = Column(String, default="NONE")
-    last_name = Column(String, default="NONE")
+    username = Column(String(255))
+    password = Column(String(255))
+    first_name = Column(String(255))
+    last_name = Column(String(255))
     role = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.datetime.now)
     creation_update = Column(DateTime, nullable=True)

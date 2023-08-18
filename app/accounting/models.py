@@ -1,11 +1,11 @@
 import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy.ext.declarative import declarative_base
 
-from app.accounting.database import Base
-
+Base = declarative_base()
 
 class Chart(Base):
-    __tablename__ = "chart_of_accounts"
+    __tablename__ = "accounting_chart"
 
     id = Column(Integer, primary_key=True, index=True)
     account_name = Column(String(255))
@@ -15,7 +15,7 @@ class Chart(Base):
 
 
 class Journal(Base):
-    __tablename__ = "journal_entry"
+    __tablename__ = "accounting_journal"
 
     id = Column(Integer, primary_key=True, index=True)
     supplier_id = Column(Integer, nullable=True)
@@ -31,7 +31,7 @@ class Journal(Base):
 
 
 class Supplier(Base):
-    __tablename__ = "supplier"
+    __tablename__ = "accounting_supplier"
 
     id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String(255))
@@ -48,7 +48,7 @@ class Supplier(Base):
 
 
 class Debit(Base):
-    __tablename__ = "debit_balance"
+    __tablename__ = "accounting_debit_balance"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))
@@ -57,7 +57,7 @@ class Debit(Base):
 
 
 class Credit(Base):
-    __tablename__ = "credit_balance"
+    __tablename__ = "accounting_credit_balance"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))

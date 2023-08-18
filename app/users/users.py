@@ -1,16 +1,9 @@
 from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
-from app.users.database import SessionLocal
+from app.database import DatabaseSessionMaker
 from app.users.routers import users_router
 
 app = FastAPI(title="APP Features", description="App Integration Resources")
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+get_db = DatabaseSessionMaker("shydans_db")
 
 app.include_router(users_router.router)

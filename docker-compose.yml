@@ -5,29 +5,55 @@ services:
     build: .
     ports:
       - "8080:80"
-    depends_on:
-      - db
     volumes:
       - ./app:/code/app
       - ./env:/code/env
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_started
 
   phpmyadmin:
-    image: phpmyadmin
+    image: phpmyadmin/phpmyadmin
     restart: always
     ports:
       - 8081:80
     environment:
-      # - PMA_ARBITRARY=1
+      - PMA_ARBITRARY=1
       - PMA_HOST=db
       - PMA_USER=root
       - PMA_PASSWORD=S2Xqf6PJ5zNjMjBd3x
+    depends_on:
+      db:
+        condition: service_healthy
 
   db:
-    image: mysql:latest
-    restart: always
+    image: mariadb:latest
+    restart: on-failure
     environment:
       - MYSQL_ROOT_PASSWORD=S2Xqf6PJ5zNjMjBd3x
-    # volumes: 
-    #   - ./db/:/docker-entrypoint-initdb.d
+      - MARIADB_MYSQL_LOCALHOST_USER:true
+    volumes:
+      - ./db/:/docker-entrypoint-initdb.d
+      - ./dbconf.d/:/etc/mysql/conf.d
+      - db-persistent-data:/var/lib/mysql
     ports:
       - "3336:3306"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/local/bin/healthcheck.sh",
+          "--su-mysql",
+          "--connect"
+        ]
+
+  cache:
+    image: redis/redis-stack
+    ports:
+      - '6379:6379' # Redis server
+      - '8001:8001' # RedisInsight
+      
+volumes:
+  db-persistent-data:

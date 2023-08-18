@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.accounting import schemas, models
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 
 #### CHART OF ACCOUNT RESOURCES
@@ -118,6 +118,27 @@ def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_id
         filtered_result = [result for result in filtered_result if result.supplier_id == supplier_id]
 
     return filtered_result
+
+def insert_journal_from_csv(db: Session, csv_journal: schemas.CSVJournal):
+    journal = (
+        db.query(models.Journal)
+        .filter(
+            models.Journal.date == csv_journal.date,
+        )
+        .all()
+    )
+    if journal:
+        journal_id = update_journal(db=db, id=journal[0].id, journal=csv_journal).id
+    else:
+        journal_id = create_journal(db=db, journal=csv_journal).id
+
+    return journal_id
+
+def import_journals(db: Session, csv_journal: list[schemas.CSVJournal]):
+    for journal in csv_journal:
+       insert_journal_from_csv(db=db, csv_journal=journal)
+
+    raise HTTPException(status_code=status.HTTP_201_CREATED)
 
 # Create Journal Entry
 def create_journal(db: Session, journal : schemas.JournalCreate):

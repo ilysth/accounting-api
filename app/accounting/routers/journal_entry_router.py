@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.accounting import crud, schemas
 from app.accounting.database import SessionLocal
@@ -41,6 +41,13 @@ async def read_journals_by_filter(db: Session = Depends(get_db), from_date: Opti
     except:
         if from_date and to_date is None:
             raise HTTPException(status_code=404, detail="from_date or to_date should not be empty.")
+
+# Import Journal Entry
+@router.post("/import-journal", status_code=status.HTTP_201_CREATED)
+async def import_journals(
+    csv_journal: list[schemas.JournalCreate], db: Session = Depends(get_db)
+):
+    return crud.import_journals(db=db, csv_journal=csv_journal)
 
 # Create Journal Entry
 @router.post("/")

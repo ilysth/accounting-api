@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.database import DatabaseSessionMaker
-from app.users.routers import users_router
+from app.dashboard.routers import users_router
 
 app = FastAPI(title="APP Features", description="App Integration Resources")
 

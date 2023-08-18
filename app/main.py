@@ -3,13 +3,13 @@
 
 from fastapi import FastAPI
 from app.accounting import accounting
-from app.users import users
+from app.dashboard import dashboard
 from app.oauth import oauth
 
 app = FastAPI(title="APP Features", description="App Integration Resources")
 
 app.mount("/accounting", accounting.app)
-app.mount("/users", users.app)
+app.mount("/dashboard", dashboard.app)
 app.mount("/oauth", oauth.app)
 
 # config_paths = [

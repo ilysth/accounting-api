@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.users import schemas, models
+from app.dashboard import schemas, models
 from fastapi import HTTPException
 from passlib.hash import bcrypt
 
@@ -26,7 +26,6 @@ def login(username: str, password: str, db: Session):
         raise HTTPException(status_code=404, detail="Incorrect username or password")
     
 
-# Create User
 def create_user(db: Session, user: schemas.UserCreate):
     db_user_check = get_user_from_db(username=user.username , db=db)
     

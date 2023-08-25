@@ -5,12 +5,14 @@ from fastapi import FastAPI
 from app.accounting import accounting
 from app.dashboard import dashboard
 from app.oauth import oauth
+from app.bency import bency
 
 app = FastAPI(title="APP Features", description="App Integration Resources")
 
 app.mount("/accounting", accounting.app)
 app.mount("/dashboard", dashboard.app)
 app.mount("/oauth", oauth.app)
+app.mount("/bency", bency.app)
 
 # config_paths = [
 #     'app/accounting/alembic.ini',

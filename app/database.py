@@ -15,7 +15,7 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
 
 database_names = [
-    "shydans_db", "bency_db"
+    "shydans_db", "tessa_db"
 ]
 
 #Create a connection to the MySQL server then create databases that don't exist.

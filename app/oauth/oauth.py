@@ -1,22 +1,21 @@
-from fastapi import FastAPI, Depends, HTTPException
+from datetime import datetime, timedelta
+from typing import Optional
+
+from dotenv import dotenv_values
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.hash import bcrypt
-
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-
 from jose import JWTError, jwt
 from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime, timedelta
-from dotenv import dotenv_values
+from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session, sessionmaker
 
-config = dotenv_values("env/.env")  
-mysql_password = config['MYSQL_ROOT_PASSWORD']
-mysql_host = config['MYSQL_HOST']
-mysql_port = config['MYSQL_PORT']
+from fastapi import Depends, FastAPI, HTTPException
+
+config = dotenv_values("env/.env")
+mysql_password = config["MYSQL_ROOT_PASSWORD"]
+mysql_host = config["MYSQL_HOST"]
+mysql_port = config["MYSQL_PORT"]
 db_name = config['DB_NAME_USER']
 
 SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://root:{mysql_password}@{mysql_host}:{mysql_port}/{db_name}"
@@ -44,8 +43,9 @@ app = FastAPI()
 
 # SQLAlchemy model
 
+
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "dashboard_users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String)
     password = Column(String)
@@ -93,7 +93,9 @@ def get_user(db: Session, username: str, password: Optional[str] = None):
         return UserLogin.from_orm(user)
 
 
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def get_current_user(
+    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
+):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -111,19 +113,18 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
 async def get_current_active_user(current_user: UserLogin = Depends(get_current_user)):
     return current_user
 
-def verify_password(plain_password, hashed_password):
-    return bcrypt.verify(plain_password, hashed_password)
 
 # Used to generate login tokens.
 @app.post("/token/", response_model=Token)
-async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
-    user = get_user(db, form_data.username)
-    
-    if user is None or not verify_password(form_data.password, user.password):
+async def login_for_access_token(
+    db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
+):
+    user = get_user(db, form_data.username, form_data.password)
+    if user is None:
         raise HTTPException(
             status_code=400,
             detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(hours=ACCESS_TOKEN_HOURS)
     access_token = create_access_token(

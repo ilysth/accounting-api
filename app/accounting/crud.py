@@ -3,9 +3,6 @@ from app.accounting import schemas, models
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 
-#### CHART OF ACCOUNT RESOURCES
-
-# Get All Chart of Account
 def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     charts_db = db.query(models.Chart)
     
@@ -23,7 +20,6 @@ def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
         sort).offset(skip).limit(limit).all()
     return filtered_result
 
-# Create Chart of Account
 def create_chart(db: Session, chart: schemas.ChartCreate):
     db_chart = models.Chart(**chart.dict())
     db.add(db_chart)
@@ -31,7 +27,6 @@ def create_chart(db: Session, chart: schemas.ChartCreate):
     db.refresh(db_chart)
     return db_chart
 
-# Update Chart of Account
 def update_chart(db: Session, id: int, chart: schemas.ChartCreate):
     db_chart = db.query(models.Chart).get(id)
 
@@ -46,8 +41,7 @@ def update_chart(db: Session, id: int, chart: schemas.ChartCreate):
         db.commit()
         db.refresh(db_chart)
         return db_chart
-    
-# Delete Chart of Account
+ 
 def delete_chart(db: Session, id: int):
     db_chart = db.query(models.Chart).get(id)
     
@@ -59,9 +53,6 @@ def delete_chart(db: Session, id: int):
         db.commit()
         return db_chart
     
-#### JOURNAL ENTRY RESOURCES
-
-# Get All Journal Entries
 def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     journals_db = db.query(models.Journal)
     
@@ -119,28 +110,25 @@ def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_id
 
     return filtered_result
 
-def insert_journal_from_csv(db: Session, csv_journal: schemas.CSVJournal):
-    journal = (
-        db.query(models.Journal)
-        .filter(
-            models.Journal.date == csv_journal.date,
-        )
-        .all()
+def import_journal_from_csv(db: Session, csv_journal: schemas.JournalCreate):
+    new_journal = models.Journal(
+        date=csv_journal.date,
+        supplier_id=csv_journal.supplier_id,
+        debit_acct_id=csv_journal.debit_acct_id,
+        credit_acct_id=csv_journal.credit_acct_id,
+        debit_particulars=csv_journal.debit_particulars,
+        credit_particulars=csv_journal.credit_particulars,
+        debit=csv_journal.debit,
+        credit=csv_journal.credit,
+        is_supplier=csv_journal.is_supplier,
     )
-    if journal:
-        journal_id = update_journal(db=db, id=journal[0].id, journal=csv_journal).id
-    else:
-        journal_id = create_journal(db=db, journal=csv_journal).id
 
-    return journal_id
+    db.add(new_journal)
+    db.commit()
+    db.refresh(new_journal)
 
-def import_journals(db: Session, csv_journal: list[schemas.CSVJournal]):
-    for journal in csv_journal:
-       insert_journal_from_csv(db=db, csv_journal=journal)
+    return new_journal
 
-    raise HTTPException(status_code=status.HTTP_201_CREATED)
-
-# Create Journal Entry
 def create_journal(db: Session, journal : schemas.JournalCreate):
     db_journal = models.Journal(**journal .dict())
     db.add(db_journal)
@@ -148,7 +136,6 @@ def create_journal(db: Session, journal : schemas.JournalCreate):
     db.refresh(db_journal )
     return db_journal 
 
-# Update Journal Entry
 def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
     db_journal = db.query(models.Journal).get(id)
 
@@ -158,9 +145,11 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
     if db_journal is not None:
         db_journal.date = journal.date
         db_journal.supplier_id = journal.supplier_id
-        db_journal.document_no = journal.document_no
+        db_journal.reference_no = journal.reference_no
         db_journal.debit_acct_id = journal.debit_acct_id
         db_journal.credit_acct_id = journal.credit_acct_id
+        db_journal.debit_particulars = journal.debit_particulars
+        db_journal.credit_particulars = journal.credit_particulars
         db_journal.debit = journal.debit
         db_journal.credit = journal.credit
         db_journal.notes = journal.notes
@@ -170,7 +159,6 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
         db.refresh(db_journal)
         return db_journal
     
-# Delete Journal Entry
 def delete_journal(db: Session, id: int):
     db_journal = db.query(models.Journal).get(id)
 
@@ -181,10 +169,7 @@ def delete_journal(db: Session, id: int):
         db.delete(db_journal)
         db.commit()
         return db_journal
-    
-#### SUPPLIER RESOURCES
 
-# Get All Suppliers
 def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     supplier_db = db.query(models.Supplier)
     
@@ -202,7 +187,6 @@ def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limi
         sort).offset(skip).limit(limit).all()
     return filtered_result
 
-# Create Supplier
 def create_supplier(db: Session, supplier : schemas.SupplierCreate):
     db_supplier = models.Supplier(**supplier .dict())
     db.add(db_supplier)
@@ -210,7 +194,6 @@ def create_supplier(db: Session, supplier : schemas.SupplierCreate):
     db.refresh(db_supplier)
     return db_supplier 
 
-# Update Supplier
 def update_supplier(db: Session, id: int, supplier: schemas.SupplierCreate):
     db_supplier = db.query(models.Supplier).get(id)
 
@@ -232,8 +215,7 @@ def update_supplier(db: Session, id: int, supplier: schemas.SupplierCreate):
         db.commit()
         db.refresh(db_supplier)
         return db_supplier
-    
-# Delete Supplier
+
 def delete_supplier(db: Session, id: int):
     db_supplier = db.query(models.Supplier).get(id)
 
@@ -245,7 +227,6 @@ def delete_supplier(db: Session, id: int):
         db.commit()
         return db_supplier
     
-# Get Latest Balance Debit
 def get_latest_debit_balance(db: Session):
     balance_debit_db = db.query(models.Debit).order_by(models.Debit.created_at.desc()).first()
 
@@ -254,7 +235,6 @@ def get_latest_debit_balance(db: Session):
 
     return balance_debit_db
    
-# Create Debit Balance
 def create_debit(db: Session, debit: schemas.DebitCreate):
     db_debit = models.Debit(**debit.dict())
     db.add(db_debit)
@@ -262,7 +242,6 @@ def create_debit(db: Session, debit: schemas.DebitCreate):
     db.refresh(db_debit)
     return db_debit
     
-# Get Latest Balance Credit
 def get_latest_credit_balance(db: Session):
     balance_credit_db = db.query(models.Credit).order_by(models.Credit.created_at.desc()).first()
 
@@ -271,7 +250,6 @@ def get_latest_credit_balance(db: Session):
  
     return balance_credit_db
 
-# Create Credit Balance
 def create_credit(db: Session, credit: schemas.CreditCreate):
     db_credit = models.Credit(**credit.dict())
     db.add(db_credit)

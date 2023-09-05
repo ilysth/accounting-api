@@ -35,11 +35,28 @@ async def read_journals_by_filter(db: Session = Depends(get_db), from_date: Opti
         if from_date and to_date is None:
             raise HTTPException(status_code=404, detail="from_date or to_date should not be empty.")
 
+# @router.post("/import-journal", status_code=status.HTTP_201_CREATED)
+# async def import_journals(
+#     csv_journal: list[schemas.JournalCreate], db: Session = Depends(get_db)
+# ):
+#     return crud.import_journals(db=db, csv_journal=csv_journal)
+
 @router.post("/import-journal", status_code=status.HTTP_201_CREATED)
 async def import_journals(
     csv_journal: list[schemas.JournalCreate], db: Session = Depends(get_db)
 ):
-    return crud.import_journals(db=db, csv_journal=csv_journal)
+    imported_journals = []
+
+    for journal_data in csv_journal:
+        journal = crud.import_journal_from_csv(db=db, csv_journal=journal_data)
+        imported_journals.append(journal)
+
+    if len(imported_journals) > 0:
+        response_status = status.HTTP_201_CREATED
+    else:
+        response_status = status.HTTP_204_NO_CONTENT
+
+    raise HTTPException(status_code=response_status)
 
 @router.post("/")
 async def create_journal(journal: schemas.JournalCreate, db: Session = Depends(get_db)):

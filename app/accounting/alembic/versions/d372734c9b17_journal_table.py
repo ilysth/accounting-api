@@ -17,7 +17,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TABLE `shydans_db`.`accounting_journal` (`id` INT NOT NULL AUTO_INCREMENT, `supplier_id` INT NULL, `document_no` VARCHAR(255) NULL, `debit_acct_id` INT NULL, `credit_acct_id` INT NULL, `debit` FLOAT NULL, `credit` FLOAT NULL, `date` DATETIME NOT NULL, `notes` VARCHAR(255) NULL, `created_at` DATETIME ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, `is_supplier` INT NOT NULL DEFAULT '0', PRIMARY KEY (`id`), FOREIGN KEY (`supplier_id`) REFERENCES `accounting_supplier` (`id`), FOREIGN KEY (`debit_acct_id`) REFERENCES `accounting_chart` (`id`), FOREIGN KEY (`credit_acct_id`) REFERENCES `accounting_chart` (`id`)) ENGINE=InnoDB;")
+    op.execute("CREATE TABLE `shydans_db`.`accounting_journal` (`id` INT NOT NULL AUTO_INCREMENT, `supplier_id` INT NULL, `reference_no` VARCHAR(255) NULL, `debit_acct_id` INT NULL, `credit_acct_id` INT NULL,`debit_particulars` VARCHAR(255) NULL, `credit_particulars` VARCHAR(255) NULL, `debit` FLOAT NULL, `credit` FLOAT NULL, `date` DATETIME NOT NULL, `notes` VARCHAR(255) NULL, `created_at` DATETIME ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, `is_supplier` INT NOT NULL DEFAULT '0', PRIMARY KEY (`id`), FOREIGN KEY (`supplier_id`) REFERENCES `accounting_supplier` (`id`), FOREIGN KEY (`debit_acct_id`) REFERENCES `accounting_chart` (`id`), FOREIGN KEY (`credit_acct_id`) REFERENCES `accounting_chart` (`id`)) ENGINE=InnoDB;")
 
 
 def downgrade() -> None:

@@ -22,14 +22,16 @@ class Chart(ChartBase):
 
 class JournalBase(BaseModel):
     supplier_id: Optional[int]
-    document_no: Optional[str]
-    debit_acct_id: int
-    credit_acct_id: int
-    debit: float
-    credit: float
-    date: Optional[datetime] = None
+    reference_no: Optional[str]
+    debit_acct_id: Optional[int]
+    credit_acct_id: Optional[int]
+    debit_particulars: Optional[str]
+    credit_particulars: Optional[str]
+    debit: Optional[float]
+    credit: Optional[float]
+    date: Optional[datetime]
     notes: Optional[str]
-    is_supplier: int
+    is_supplier: Optional[int]
 
 
 class JournalCreate(JournalBase):
@@ -47,6 +49,8 @@ class CSVJournal(BaseModel):
     is_supplier: int
     debit_acct_id: int
     credit_acct_id: int
+    debit_particulars: Optional[str]
+    credit_particulars: Optional[str]
     debit: float
     credit: float
 

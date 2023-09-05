@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -19,11 +19,13 @@ class Journal(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     supplier_id = Column(Integer, nullable=True)
-    document_no = Column(String(255), nullable=True)
+    reference_no = Column(String(255), nullable=True)
     debit_acct_id = Column(Integer, nullable=True)
     credit_acct_id = Column(Integer, nullable=True)
-    debit = Column(Float)
-    credit = Column(Float)
+    debit_particulars = Column(String(255), nullable=True)
+    credit_particulars = Column(String(255), nullable=True)
+    debit = Column(Float, nullable=True)
+    credit = Column(Float, nullable=True)
     date = Column(DateTime, nullable=True)
     notes = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now)

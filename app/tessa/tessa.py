@@ -20,13 +20,13 @@ if not os.path.exists(K_DIR_TESSA_UPLOADS):
 app.mount("/files/", StaticFiles(directory=K_DIR_TESSA_UPLOADS), name="files")
 
 # Get a sample message
-@app.post("/message", tags=["Bency_Test"])
+@app.post("/message/", tags=["Bency_Test"])
 async def say_hello(my_obj: schemas.tessa_obj):
     """Returns a sample"""
     return tessa_methods.say_hello(str=my_obj.name, tessa_obj=my_obj)
 
 # Create a table defined in TESSA
-@app.post('/create_table', tags=["TESSA_Database_Modeling"])
+@app.post("/create_table/", tags=["TESSA_Database_Modeling"])
 async def create_table(table_name: str, columns: list, data_types: list, table_comment: str = ""):
     """Creates a new table with the given name and columns."""
     
@@ -45,10 +45,10 @@ async def create_table(table_name: str, columns: list, data_types: list, table_c
 
     mysql_connection.close()
 
-    return {'message': 'Table created successfully'}
+    return {"message": "Table created successfully"}
 
 # Upload a file from TESSA
-@app.post("/uploadfile/", tags=["TESSA_File_Management"])
+@app.post("/upload_file/", tags=["TESSA_File_Management"])
 async def upload_file(file: UploadFile):
 
     file_bytes = file.file.read()
@@ -62,4 +62,9 @@ async def upload_file(file: UploadFile):
         f.write(file_bytes)
         f.close
 
-    return {"filename": file.filename}
+    return {"filename": file.filename,
+            "file_size_bytes": len(file_bytes)}
+
+@app.get("/", status_code=200)
+async def connect():
+    return {"message": "TESSA Connected"}

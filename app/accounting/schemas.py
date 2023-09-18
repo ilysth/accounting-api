@@ -137,6 +137,7 @@ class CSVJournal(BaseModel):
     class Config:
         orm_mode = True
 
+
 class SupplierBase(BaseModel):
     business_type: str
     first_name: str
@@ -155,20 +156,6 @@ class SupplierCreate(SupplierBase):
 
 
 class Supplier(SupplierBase):
-    id: int
-
-    class Config:
-        orm_mode = True
-
-class CompanyBase(BaseModel):
-    name: str
-    debit: float
-
-class CompanyCreate(CompanyBase):
-    pass
-
-
-class Company(CompanyBase):
     id: int
 
     class Config:

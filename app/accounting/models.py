@@ -1,5 +1,6 @@
 import datetime
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Float, DECIMAL
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -13,6 +14,7 @@ class Frame(Base):
     account_code = Column(String(255))
     created_at = Column(DateTime, default=datetime.datetime.now)
 
+    charts = relationship("Chart", back_populates="frame", cascade="all, delete-orphan")
 
 class Chart(Base):
     __tablename__ = "accounting_charts"
@@ -24,6 +26,7 @@ class Chart(Base):
     account_code = Column(String(255))
     created_at = Column(DateTime, default=datetime.datetime.now)
 
+    frame = relationship("Frame", back_populates="charts")
 
 class Supplier(Base):
     __tablename__ = "accounting_supplier"
@@ -50,15 +53,19 @@ class Company(Base):
     company_code = Column(String(255))
     created_at = Column(DateTime, default=datetime.datetime.now)
 
+    departments = relationship("Department", back_populates="company", cascade="all, delete-orphan")
+
 
 class Department(Base):
     __tablename__ = "accounting_company_department"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("accounting_supplier.id"))
+    company_id = Column(Integer, ForeignKey("accounting_company.id"))
     name = Column(String(255))
     dept_code = Column(String(255))
     created_at = Column(DateTime, default=datetime.datetime.now)
+
+    company = relationship("Company", back_populates="departments")
 
 
 class Journal(Base):

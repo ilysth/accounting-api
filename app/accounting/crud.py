@@ -44,7 +44,11 @@ def update_frame(db: Session, id: int, frame: schemas.FrameCreate):
  
 def delete_frame(db: Session, id: int):
     db_frame = db.query(models.Frame).get(id)
-    
+    chart = db.query(models.Chart).filter(models.Chart.frame_id == id).first()
+
+    if chart is not None:
+        raise HTTPException(status_code=404, detail="Cannot be deleted. Account Frames have sub-accounts in use.")
+
     if db_frame is None:
         raise HTTPException(status_code=404, detail="Account Frame not found.")
 
@@ -71,6 +75,11 @@ def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
     return filtered_result
 
 def create_chart(db: Session, chart: schemas.ChartCreate):
+    frame = db.query(models.Frame).filter(models.Frame.id == chart.frame_id).first()
+
+    if not frame:
+        raise HTTPException(status_code=404, detail="Account Frame does not exist.")
+
     db_chart = models.Chart(**chart.dict())
     db.add(db_chart)
     db.commit()
@@ -93,8 +102,9 @@ def update_chart(db: Session, id: int, chart: schemas.ChartCreate):
         return db_chart
  
 def delete_chart(db: Session, id: int):
+    # todo: check account if in use in in credit and debit table, if exist dont let to delete account
     db_chart = db.query(models.Chart).get(id)
-    
+
     if db_chart is None:
         raise HTTPException(status_code=404, detail="Account Name not found.")
 
@@ -102,7 +112,114 @@ def delete_chart(db: Session, id: int):
         db.delete(db_chart)
         db.commit()
         return db_chart
+
+def get_companies(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+    charts_db = db.query(models.Company)
     
+    sortable_columns = {
+        "id": models.Company.id,
+    }
+
+    sort = (
+        sortable_columns.get("id").asc()
+        if sort_direction == "desc"
+        else sortable_columns.get("id").desc()
+    )
+
+    filtered_result = charts_db.order_by(
+        sort).offset(skip).limit(limit).all()
+    return filtered_result
+
+def create_company(db: Session, company: schemas.CompanyCreate):
+    db_company = models.Company(**company.dict())
+    db.add(db_company)
+    db.commit()
+    db.refresh(db_company)
+    return db_company
+
+def update_company(db: Session, id: int, company: schemas.CompanyCreate):
+    db_company = db.query(models.Company).get(id)
+
+    if db_company is None:
+        raise HTTPException(status_code=404, detail="Company not found.")
+
+    if db_company is not None:
+        db_company.name = company.name
+        db_company.company_code = company.company_code
+
+        db.commit()
+        db.refresh(db_company)
+        return db_company
+ 
+def delete_company(db: Session, id: int):
+    db_company = db.query(models.Company).get(id)
+    department = db.query(models.Department).filter(models.Department.company_id == id).first()
+
+    if department is not None:
+        raise HTTPException(status_code=404, detail="Cannot be deleted. Company have departments in use.")
+
+    if db_company is None:
+        raise HTTPException(status_code=404, detail="Company not found.")
+
+    if db_company is not None:
+        db.delete(db_company)
+        db.commit()
+        return db_company
+
+def get_departments(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+    charts_db = db.query(models.Department)
+    
+    sortable_columns = {
+        "id": models.Department.id,
+    }
+
+    sort = (
+        sortable_columns.get("id").asc()
+        if sort_direction == "desc"
+        else sortable_columns.get("id").desc()
+    )
+
+    filtered_result = charts_db.order_by(
+        sort).offset(skip).limit(limit).all()
+    return filtered_result
+   
+def create_department(db: Session, department: schemas.DepartmentCreate):
+    company = db.query(models.Company).filter(models.Company.id == department.company_id).first()
+
+    if not company:
+        raise HTTPException(status_code=404, detail="Company dont exist.")
+    
+    db_dept = models.Department(**department.dict())
+    db.add(db_dept)
+    db.commit()
+    db.refresh(db_dept)
+    return db_dept
+
+def update_department(db: Session, id: int, department: schemas.DepartmentCreate):
+    db_dept = db.query(models.Department).get(id)
+
+    if db_dept is None:
+        raise HTTPException(status_code=404, detail="Department not found.")
+
+    if db_dept is not None:
+        db_dept.name = department.name
+        db_dept.dept_code = department.dept_code
+
+        db.commit()
+        db.refresh(db_dept)
+        return db_dept
+ 
+def delete_department(db: Session, id: int):
+    db_dept = db.query(models.Department).get(id)
+
+    if db_dept is None:
+        raise HTTPException(status_code=404, detail="Department not found.")
+
+    if db_dept is not None:
+        db.delete(db_dept)
+        db.commit()
+        return db_dept
+         
 def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     journals_db = db.query(models.Journal)
     

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.accounting import crud, schemas
 from app.database import DatabaseSessionMaker
 
-router = APIRouter(prefix="/charts", tags=["Chart of Account Resources"])
+router = APIRouter(prefix="/chart", tags=["Chart of Account Resources"])
 
 get_db = DatabaseSessionMaker("shydans_db")
 

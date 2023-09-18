@@ -3,6 +3,56 @@ from app.accounting import schemas, models
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 
+def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+    charts_db = db.query(models.Frame)
+    
+    sortable_columns = {
+        "id": models.Frame.id,
+    }
+
+    sort = (
+        sortable_columns.get("id").asc()
+        if sort_direction == "desc"
+        else sortable_columns.get("id").desc()
+    )
+
+    filtered_result = charts_db.order_by(
+        sort).offset(skip).limit(limit).all()
+    return filtered_result
+
+def create_frame(db: Session, frame: schemas.FrameCreate):
+    db_frame = models.Frame(**frame.dict())
+    db.add(db_frame)
+    db.commit()
+    db.refresh(db_frame)
+    return db_frame
+
+def update_frame(db: Session, id: int, frame: schemas.FrameCreate):
+    db_frame = db.query(models.Frame).get(id)
+
+    if db_frame is None:
+        raise HTTPException(status_code=404, detail="Account Frame not found.")
+
+    if db_frame is not None:
+        db_frame.name = frame.name
+        db_frame.report_type = frame.report_type
+        db_frame.account_code = frame.account_code
+
+        db.commit()
+        db.refresh(db_frame)
+        return db_frame
+ 
+def delete_frame(db: Session, id: int):
+    db_frame = db.query(models.Frame).get(id)
+    
+    if db_frame is None:
+        raise HTTPException(status_code=404, detail="Account Frame not found.")
+
+    if db_frame is not None:
+        db.delete(db_frame)
+        db.commit()
+        return db_frame
+    
 def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     charts_db = db.query(models.Chart)
     
@@ -31,12 +81,12 @@ def update_chart(db: Session, id: int, chart: schemas.ChartCreate):
     db_chart = db.query(models.Chart).get(id)
 
     if db_chart is None:
-        raise HTTPException(status_code=404, detail="Chart of Account not found.")
+        raise HTTPException(status_code=404, detail="Account Name not found.")
 
     if db_chart is not None:
-        db_chart.account_name = chart.account_name
+        db_chart.name = chart.name
         db_chart.account_type = chart.account_type
-        db_chart.report_type = chart.report_type
+        db_chart.account_code = chart.account_code
 
         db.commit()
         db.refresh(db_chart)
@@ -46,7 +96,7 @@ def delete_chart(db: Session, id: int):
     db_chart = db.query(models.Chart).get(id)
     
     if db_chart is None:
-        raise HTTPException(status_code=404, detail="Chart of Account not found.")
+        raise HTTPException(status_code=404, detail="Account Name not found.")
 
     if db_chart is not None:
         db.delete(db_chart)

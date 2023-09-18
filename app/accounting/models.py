@@ -1,35 +1,28 @@
 import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Float, DECIMAL
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Float, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class Chart(Base):
-    __tablename__ = "accounting_chart"
+class Frame(Base):
+    __tablename__ = "accounting_frame"
 
     id = Column(Integer, primary_key=True, index=True)
-    account_name = Column(String(255))
-    account_type = Column(String(255))
+    name = Column(String(255)) 
     report_type = Column(String(255))
+    account_code = Column(String(255))
     created_at = Column(DateTime, default=datetime.datetime.now)
 
 
-class Journal(Base):
-    __tablename__ = "accounting_journal"
+class Chart(Base):
+    __tablename__ = "accounting_charts"
 
     id = Column(Integer, primary_key=True, index=True)
-    supplier_id = Column(Integer, nullable=True)
-    reference_no = Column(String(255), nullable=True)
-    debit_acct_id = Column(Integer, nullable=True)
-    credit_acct_id = Column(Integer, nullable=True)
-    debit_particulars = Column(String(255), nullable=True)
-    credit_particulars = Column(String(255), nullable=True)
-    debit = Column(Float, nullable=True)
-    credit = Column(Float, nullable=True)
-    date = Column(DateTime, nullable=True)
-    notes = Column(String(255), nullable=True)
+    frame_id = Column(Integer, ForeignKey("accounting_frame.id"))
+    name = Column(String(255))
+    account_type = Column(String(255))
+    account_code = Column(String(255))
     created_at = Column(DateTime, default=datetime.datetime.now)
-    is_supplier = Column(Integer, default=0)
 
 
 class Supplier(Base):
@@ -49,7 +42,59 @@ class Supplier(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
 
 
-class Debit(Base):
+class Company(Base):
+    __tablename__ = "accounting_company"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255))
+    company_code = Column(String(255))
+    created_at = Column(DateTime, default=datetime.datetime.now)
+
+
+class Department(Base):
+    __tablename__ = "accounting_company_department"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("accounting_supplier.id"))
+    name = Column(String(255))
+    dept_code = Column(String(255))
+    created_at = Column(DateTime, default=datetime.datetime.now)
+
+
+class Journal(Base):
+    __tablename__ = "accounting_journal"
+
+    id = Column(Integer, primary_key=True, index=True)
+    supplier_id = Column(Integer, ForeignKey("accounting_supplier.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("accounting_company.id"), nullable=True)
+    reference_no = Column(String(255), nullable=True)
+    date = Column(DateTime, nullable=True)
+    notes = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    is_supplier = Column(Integer, default=0)
+
+
+class DebitJournal(Base):
+    __tablename__ = "accounting_journal_debit"
+
+    id = Column(Integer, primary_key=True, index=True)
+    journal_id = Column(Integer, ForeignKey("accounting_journal.id"), nullable=True)
+    account_name_id = Column(Integer, ForeignKey("accounting_charts.id"), nullable=True)
+    debit = Column(Float, default=0)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+
+
+class CreditJournal(Base):
+    __tablename__ = "accounting_journal_credit"
+
+    id = Column(Integer, primary_key=True, index=True)
+    journal_id = Column(Integer, ForeignKey("accounting_journal.id"), nullable=True)
+    account_name_id = Column(Integer, ForeignKey("accounting_charts.id"), nullable=True)
+    debit = Column(Float, default=0)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+
+
+class DebitBalance(Base):
     __tablename__ = "accounting_debit_balance"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -58,7 +103,7 @@ class Debit(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
 
 
-class Credit(Base):
+class CreditBalance(Base):
     __tablename__ = "accounting_credit_balance"
 
     id = Column(Integer, primary_key=True, index=True)

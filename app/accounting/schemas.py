@@ -6,7 +6,7 @@ from typing import Optional
 class FrameBase(BaseModel):
     name: str
     report_type: str
-    account_code: str
+    code: str
 
 class FrameCreate(FrameBase):
     pass
@@ -14,7 +14,7 @@ class FrameCreate(FrameBase):
 
 class Frame(FrameBase):
     id: int
-
+    
     class Config:
         orm_mode = True
         
@@ -23,7 +23,7 @@ class ChartBase(BaseModel):
     frame_id: int
     name: str
     account_type: str
-    account_code: str
+    code: str
 
 
 class ChartCreate(ChartBase):
@@ -39,7 +39,7 @@ class Chart(ChartBase):
 
 class CompanyBase(BaseModel):
     name: str
-    company_code: str
+    code: str
 
 
 class CompanyCreate(CompanyBase):
@@ -56,7 +56,7 @@ class Company(CompanyBase):
 class DepartmentBase(BaseModel):
     company_id: int
     name: str
-    dept_code: str
+    code: str
 
 
 class DepartmentCreate(DepartmentBase):
@@ -90,34 +90,18 @@ class Journal(JournalBase):
         orm_mode = True
 
 
-class DebitJournalBase(BaseModel):
+class TransactionBase(BaseModel):
     journal_id: int
-    account_name_id: int
+    chart_id: int
     amount: float
+    is_type: int
 
 
-class DebitJournalCreate(DebitJournalBase):
+class TransactionCreate(TransactionBase):
     pass
 
 
-class DebitJournal(DebitJournalBase):
-    id: int
-
-    class Config:
-        orm_mode = True
-
-
-class CreditJournalBase(BaseModel):
-    journal_id: int
-    account_name_id: int
-    amount: float
-
-
-class CreditCreate(CreditJournalBase):
-    pass
-
-
-class CreditJournal(CreditJournalBase):
+class Transaction(TransactionBase):
     id: int
 
     class Config:

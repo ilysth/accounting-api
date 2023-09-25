@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.accounting import crud, schemas
-from typing import List
 from app.database import DatabaseSessionMaker
 
 router = APIRouter(prefix="/suppliers", tags=["Supplier Resources"])

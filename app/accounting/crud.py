@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 from app.accounting import schemas, models
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
+from typing import List, Dict
+from collections import defaultdict
+import json
 
 def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     charts_db = db.query(models.Frame)
@@ -152,11 +155,17 @@ def update_company(db: Session, id: int, company: schemas.CompanyCreate):
         return db_company
  
 def delete_company(db: Session, id: int):
-    db_company = db.query(models.Company).get(id)
     department = db.query(models.Department).filter(models.Department.company_id == id).first()
 
     if department is not None:
         raise HTTPException(status_code=404, detail="Cannot be deleted. Company have departments in use.")
+
+    transaction = db.query(models.Transaction).filter(models.Transaction.company_id == id).first()
+
+    if transaction is not None:
+        raise HTTPException(status_code=404, detail="Cannot be deleted. Company have transaction/s.")
+    
+    db_company = db.query(models.Company).get(id)
 
     if db_company is None:
         raise HTTPException(status_code=404, detail="Company not found.")
@@ -220,11 +229,11 @@ def delete_department(db: Session, id: int):
         db.commit()
         return db_dept
          
-def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
-    journals_db = db.query(models.Journal)
+def get_transactions(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+    transaction_db = db.query(models.Transaction)
     
     sortable_columns = {
-        "id": models.Journal.id,
+        "id": models.Transaction.id,
     }
 
     sort = (
@@ -233,13 +242,69 @@ def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit
         else sortable_columns.get("id").desc()
     )
 
-    filtered_result = journals_db.order_by(
+    filtered_result = transaction_db.order_by(
         sort).offset(skip).limit(limit).all()
-    return filtered_result   
+    return filtered_result 
 
-def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_id: int = 0, supplier_id: int = 0, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
-    journals_db = db.query(models.Journal)
+def create_transaction(db: Session, transaction : schemas.TransactionCreate):
+    journal = db.query(models.Journal).filter(models.Journal.id == transaction.journal_id).first()
 
+    if not journal:
+        raise HTTPException(status_code=404, detail="Journal Entry dont exist.")
+    
+    chart = db.query(models.Chart).filter(models.Chart.id == transaction.chart_id).first()
+
+    if not chart:
+        raise HTTPException(status_code=404, detail="Account name dont exist.")
+
+    db_transaction = models.Transaction(**transaction .dict())
+    db.add(db_transaction)
+    db.commit()
+    db.refresh(db_transaction )
+    return db_transaction 
+
+def update_transaction(db: Session, id: int, transaction: schemas.TransactionCreate):
+    journal = db.query(models.Journal).filter(models.Journal.id == transaction.journal_id).first()
+
+    if not journal:
+        raise HTTPException(status_code=404, detail="Journal Entry dont exist.")
+    
+    chart = db.query(models.Chart).filter(models.Chart.id == transaction.chart_id).first()
+
+    if not chart:
+        raise HTTPException(status_code=404, detail="Account name dont exist.")
+    
+    db_transaction = db.query(models.Transaction).get(id)
+
+    if db_transaction is None:
+        raise HTTPException(status_code=404, detail="Transaction not found.")
+
+    if db_transaction is not None:
+        db_transaction.supplier_id = transaction.supplier_id
+        db_transaction.company_id = transaction.company_id
+        db_transaction.reference_no = transaction.reference_no
+        db_transaction.notes = transaction.notes
+        db_transaction.date = transaction.date
+        db_transaction.is_supplier = transaction.is_supplier
+
+        db.commit()
+        db.refresh(db_transaction)
+        return db_transaction
+    
+def delete_transaction(db: Session, id: int):
+    db_transaction = db.query(models.Transaction).get(id)
+
+    if db_transaction is None:
+        raise HTTPException(status_code=404, detail="Transaction not found.")
+
+    if db_transaction is not None:
+        db.delete(db_transaction)
+        db.commit()
+        return db_transaction
+
+def get_journals(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+    debit_db = db.query(models.Journal)
+    
     sortable_columns = {
         "id": models.Journal.id,
     }
@@ -250,92 +315,209 @@ def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_id
         else sortable_columns.get("id").desc()
     )
 
-    if from_date == to_date:
-        # Filter for a single day
-        date = datetime.strptime(from_date, "%Y-%m-%d").date()
-        next_day = date + timedelta(days=1)
-        filtered_result = journals_db.filter(
-            models.Journal.date >= date,
-            models.Journal.date < next_day
-        ).order_by(sort).offset(skip).limit(limit).all()
-    else:
-        # Filter for a date range
-        from_date = datetime.strptime(from_date, "%Y-%m-%d")
-        to_date = datetime.strptime(to_date, "%Y-%m-%d")
+    filtered_result = debit_db.order_by(
+        sort).offset(skip).limit(limit).all()
+    return filtered_result 
 
-        filtered_result = journals_db.filter(
-            models.Journal.date >= from_date,
-            models.Journal.date <= to_date + timedelta(days=1)  # Adjusted the filter condition
-        ).order_by(sort).offset(skip).limit(limit).all()
+def get_journals_by_id(db: Session, id: int):
+    debit_db = db.query(models.Journal).get(id)
 
-    # Filtered by account name
-    if not account_id == 0:
-        filtered_result = [result for result in filtered_result if result.debit_acct_id == account_id or result.credit_acct_id == account_id]
-    
-    if not supplier_id == 0:
-        filtered_result = [result for result in filtered_result if result.supplier_id == supplier_id]
+    return debit_db 
 
-    return filtered_result
+def create_journal(db: Session, journal: schemas.JournalCreate):
+    debit_db = models.Journal(**journal .dict())
 
-def import_journal_from_csv(db: Session, csv_journal: schemas.JournalCreate):
-    new_journal = models.Journal(
-        date=csv_journal.date,
-        supplier_id=csv_journal.supplier_id,
-        debit_acct_id=csv_journal.debit_acct_id,
-        credit_acct_id=csv_journal.credit_acct_id,
-        debit_particulars=csv_journal.debit_particulars,
-        credit_particulars=csv_journal.credit_particulars,
-        debit=csv_journal.debit,
-        credit=csv_journal.credit,
-        is_supplier=csv_journal.is_supplier,
-    )
-
-    db.add(new_journal)
+    db.add(debit_db)
     db.commit()
-    db.refresh(new_journal)
-
-    return new_journal
-
-def create_journal(db: Session, journal : schemas.JournalCreate):
-    db_journal = models.Journal(**journal .dict())
-    db.add(db_journal)
-    db.commit()
-    db.refresh(db_journal )
-    return db_journal 
+    db.refresh(debit_db )
+    return debit_db 
 
 def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
-    db_journal = db.query(models.Journal).get(id)
+    journal_db = db.query(models.Journal).get(id)
 
-    if db_journal is None:
+    if journal_db is None:
         raise HTTPException(status_code=404, detail="Journal Entry not found.")
 
-    if db_journal is not None:
-        db_journal.date = journal.date
-        db_journal.supplier_id = journal.supplier_id
-        db_journal.reference_no = journal.reference_no
-        db_journal.debit_acct_id = journal.debit_acct_id
-        db_journal.credit_acct_id = journal.credit_acct_id
-        db_journal.debit_particulars = journal.debit_particulars
-        db_journal.credit_particulars = journal.credit_particulars
-        db_journal.debit = journal.debit
-        db_journal.credit = journal.credit
-        db_journal.notes = journal.notes
-        db_journal.is_supplier = journal.is_supplier
+    if journal_db is not None:
+        journal_db.supplier_id = journal.supplier_id
+        journal_db.company_id = journal.company_id
+        journal_db.reference_no = journal.reference_no
+        journal_db.date = journal.date
+        journal_db.notes = journal.notes
+        journal_db.is_supplier = journal.is_supplier
 
         db.commit()
-        db.refresh(db_journal)
-        return db_journal
+        db.refresh(journal_db)
+        return journal_db
     
 def delete_journal(db: Session, id: int):
-    db_journal = db.query(models.Journal).get(id)
+    journal_db = db.query(models.Journal).get(id)
 
-    if db_journal is None:
+    if journal_db is None:
         raise HTTPException(status_code=404, detail="Journal Entry not found.")
 
-    if db_journal is not None:
-        db.delete(db_journal)
+    if journal_db is not None:
+        db.delete(journal_db)
         db.commit()
-        return db_journal
+        return journal_db
+       
+def get_journals_by_frame(db: Session):
+    frames = db.query(models.Frame).all()
+    charts = db.query(models.Chart).all()
+    transactions = db.query(models.Transaction).all()
+
+    formatted_frames = []
+
+    # Create a dictionary to store charts by frame_id for quick lookup
+    charts_by_frame_id = {}
+    for chart in charts:
+        if chart.frame_id not in charts_by_frame_id:
+            charts_by_frame_id[chart.frame_id] = []
+        charts_by_frame_id[chart.frame_id].append({
+            "id": chart.id,
+            "name": chart.name,
+            "code": chart.code,
+            "created_at": str(chart.created_at),  # Convert datetime to string
+            "parent_id": chart.frame_id,
+            "transactions": []  # Initialize transactions list
+            # Add other chart attributes as needed
+        })
+
+    # Create a dictionary to store transactions by chart_id for quick lookup
+    transactions_by_chart_id = {}
+    for transaction in transactions:
+        if transaction.chart_id not in transactions_by_chart_id:
+            transactions_by_chart_id[transaction.chart_id] = []
+        transactions_by_chart_id[transaction.chart_id].append({
+            "id": transaction.id,
+            "journal_id": transaction.journal_id,
+            "amount": transaction.amount,
+            "date": str(transaction.created_at),  # Convert datetime to string
+            "is_type": transaction.is_type,
+            # Add other transaction attributes as needed
+        })
+
+    for frame in frames:
+        # Create a dictionary for each frame
+        formatted_frame = {
+            "code": frame.code,
+            "id": frame.id,
+            "report_type": frame.report_type,
+            "name": frame.name,
+            "created_at": str(frame.created_at),  # Convert datetime to string
+            "parent_id": 0,
+            "sub_accounts": charts_by_frame_id.get(frame.id, [])  # Use the charts for this frame if available
+        }
+
+        # Iterate through the sub-accounts (charts) and add transactions
+        for chart in formatted_frame["sub_accounts"]:
+            chart["transactions"] = transactions_by_chart_id.get(chart["id"], [])
+
+        # Append the formatted frame to the list
+        formatted_frames.append(formatted_frame)
+
+    return formatted_frames
+
+
+# def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_id: int = 0, supplier_id: int = 0, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+#     journals_db = db.query(models.Journal)
+
+#     sortable_columns = {
+#         "id": models.Journal.id,
+#     }
+
+#     sort = (
+#         sortable_columns.get("id").asc()
+#         if sort_direction == "desc"
+#         else sortable_columns.get("id").desc()
+#     )
+
+#     if from_date == to_date:
+#         # Filter for a single day
+#         date = datetime.strptime(from_date, "%Y-%m-%d").date()
+#         next_day = date + timedelta(days=1)
+#         filtered_result = journals_db.filter(
+#             models.Journal.date >= date,
+#             models.Journal.date < next_day
+#         ).order_by(sort).offset(skip).limit(limit).all()
+#     else:
+#         # Filter for a date range
+#         from_date = datetime.strptime(from_date, "%Y-%m-%d")
+#         to_date = datetime.strptime(to_date, "%Y-%m-%d")
+
+#         filtered_result = journals_db.filter(
+#             models.Journal.date >= from_date,
+#             models.Journal.date <= to_date + timedelta(days=1)  # Adjusted the filter condition
+#         ).order_by(sort).offset(skip).limit(limit).all()
+
+#     # Filtered by account name
+#     if not account_id == 0:
+#         filtered_result = [result for result in filtered_result if result.debit_acct_id == account_id or result.credit_acct_id == account_id]
+    
+#     if not supplier_id == 0:
+#         filtered_result = [result for result in filtered_result if result.supplier_id == supplier_id]
+
+#     return filtered_result
+
+# def import_journal_from_csv(db: Session, csv_journal: schemas.JournalCreate):
+#     new_journal = models.Journal(
+#         date=csv_journal.date,
+#         supplier_id=csv_journal.supplier_id,
+#         debit_acct_id=csv_journal.debit_acct_id,
+#         credit_acct_id=csv_journal.credit_acct_id,
+#         debit_particulars=csv_journal.debit_particulars,
+#         credit_particulars=csv_journal.credit_particulars,
+#         debit=csv_journal.debit,
+#         credit=csv_journal.credit,
+#         is_supplier=csv_journal.is_supplier,
+#     )
+
+#     db.add(new_journal)
+#     db.commit()
+#     db.refresh(new_journal)
+
+#     return new_journal
+
+# def create_journal(db: Session, journal : schemas.JournalCreate):
+#     db_journal = models.Journal(**journal .dict())
+#     db.add(db_journal)
+#     db.commit()
+#     db.refresh(db_journal )
+#     return db_journal 
+
+# def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
+#     db_journal = db.query(models.Journal).get(id)
+
+#     if db_journal is None:
+#         raise HTTPException(status_code=404, detail="Journal Entry not found.")
+
+#     if db_journal is not None:
+#         db_journal.date = journal.date
+#         db_journal.supplier_id = journal.supplier_id
+#         db_journal.reference_no = journal.reference_no
+#         db_journal.debit_acct_id = journal.debit_acct_id
+#         db_journal.credit_acct_id = journal.credit_acct_id
+#         db_journal.debit_particulars = journal.debit_particulars
+#         db_journal.credit_particulars = journal.credit_particulars
+#         db_journal.debit = journal.debit
+#         db_journal.credit = journal.credit
+#         db_journal.notes = journal.notes
+#         db_journal.is_supplier = journal.is_supplier
+
+#         db.commit()
+#         db.refresh(db_journal)
+#         return db_journal
+    
+# def delete_journal(db: Session, id: int):
+#     db_journal = db.query(models.Journal).get(id)
+
+#     if db_journal is None:
+#         raise HTTPException(status_code=404, detail="Journal Entry not found.")
+
+#     if db_journal is not None:
+#         db.delete(db_journal)
+#         db.commit()
+#         return db_journal
 
 def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     supplier_db = db.query(models.Supplier)
@@ -394,32 +576,32 @@ def delete_supplier(db: Session, id: int):
         db.commit()
         return db_supplier
     
-def get_latest_debit_balance(db: Session):
-    balance_debit_db = db.query(models.Debit).order_by(models.Debit.created_at.desc()).first()
+# def get_latest_debit_balance(db: Session):
+#     balance_debit_db = db.query(models.Debit).order_by(models.Debit.created_at.desc()).first()
 
-    if balance_debit_db is None:
-        raise HTTPException(status_code=404, detail="Not found.")
+#     if balance_debit_db is None:
+#         raise HTTPException(status_code=404, detail="Not found.")
 
-    return balance_debit_db
+#     return balance_debit_db
    
-def create_debit(db: Session, debit: schemas.DebitCreate):
-    db_debit = models.Debit(**debit.dict())
-    db.add(db_debit)
-    db.commit()
-    db.refresh(db_debit)
-    return db_debit
+# def create_debit(db: Session, debit: schemas.DebitCreate):
+#     db_debit = models.Debit(**debit.dict())
+#     db.add(db_debit)
+#     db.commit()
+#     db.refresh(db_debit)
+#     return db_debit
     
-def get_latest_credit_balance(db: Session):
-    balance_credit_db = db.query(models.Credit).order_by(models.Credit.created_at.desc()).first()
+# def get_latest_credit_balance(db: Session):
+#     balance_credit_db = db.query(models.Credit).order_by(models.Credit.created_at.desc()).first()
 
-    if balance_credit_db is None:
-        raise HTTPException(status_code=404, detail="Not found.")
+#     if balance_credit_db is None:
+#         raise HTTPException(status_code=404, detail="Not found.")
  
-    return balance_credit_db
+#     return balance_credit_db
 
-def create_credit(db: Session, credit: schemas.CreditCreate):
-    db_credit = models.Credit(**credit.dict())
-    db.add(db_credit)
-    db.commit()
-    db.refresh(db_credit)
-    return db_credit
+# def create_credit(db: Session, credit: schemas.CreditCreate):
+#     db_credit = models.Credit(**credit.dict())
+#     db.add(db_credit)
+#     db.commit()
+#     db.refresh(db_credit)
+#     return db_credit

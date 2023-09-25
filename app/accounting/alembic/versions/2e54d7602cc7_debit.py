@@ -17,8 +17,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-      op.execute("CREATE TABLE `shydans_db`.`accounting_journal_debit` (`id` INT NOT NULL AUTO_INCREMENT , `journal_id` INT NOT NULL, `account_name_id` INT NOT NULL , `amount` FLOAT NULL ,`created_at` DATETIME ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`), FOREIGN KEY (`journal_id`) REFERENCES `accounting_journal` (`id`), FOREIGN KEY (`account_name_id`) REFERENCES `accounting_charts` (`id`)) ENGINE = InnoDB;")
+      op.execute("CREATE TABLE `shydans_db`.`accounting_transaction` (`id` INT NOT NULL AUTO_INCREMENT , `journal_id` INT NOT NULL, `chart_id` INT NOT NULL , `amount` FLOAT NULL , `is_type` INT NOT NULL , `created_at` DATETIME ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`), FOREIGN KEY (`journal_id`) REFERENCES `accounting_journal` (`id`), FOREIGN KEY (`chart_id`) REFERENCES `accounting_charts` (`id`)) ENGINE = InnoDB;")
 
 
 def downgrade() -> None:
-    op.drop_table("accounting_journal_debit")
+    op.drop_table("accounting_transaction")

@@ -12,17 +12,22 @@ async def read_departments(db: Session = Depends(get_db), sort_direction: str = 
     """ List Department. """
     return crud.get_departments(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
+@router.get("/by-company/")
+async def read_departments_by_company(company_id: int, db: Session = Depends(get_db)):
+    """ List Chart of Accounts by Frame. """
+    return crud.get_departments_by_company(db=db, company_id=company_id)
+
 @router.post("/")
 async def create_department(department: schemas.DepartmentCreate, db: Session = Depends(get_db)):
     """ Add Department. """
     return crud.create_department(db=db, department=department)
 
 @router.put("/{id}/", response_model=schemas.Department)
-async def update_company(department: schemas.DepartmentCreate, id: int, db: Session = Depends(get_db)):
+async def update_department(department: schemas.DepartmentCreate, id: int, db: Session = Depends(get_db)):
     """ Update Department """
     return crud.update_department(db=db, id=id, department=department)
 
 @router.delete("/{id}/", response_model=schemas.Department)
-async def delete_company(id: int, db: Session = Depends(get_db)):
+async def delete_department(id: int, db: Session = Depends(get_db)):
     """ Remove Department """
-    return crud.delete_company(db=db, id=id)
+    return crud.delete_department(db=db, id=id)

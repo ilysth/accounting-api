@@ -408,7 +408,7 @@ def delete_journal(db: Session, id: int):
         db.commit()
         return journal_db
     
-def get_journals_by_frame(db: Session, from_date: str, to_date: str, company_id: int = 0, supplier_id: int = 0):
+def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: int = 0, chart_id: int = 0, company_id: int = 0, department_id: int = 0, supplier_id: int = 0):
     frames = db.query(models.Frame).options(joinedload(models.Frame.charts).joinedload(models.Chart.transaction)).all()
 
     if not from_date or not to_date:
@@ -434,6 +434,7 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, company_id:
             "transactions": [{
                 "id": transaction.id,
                 "company_id": transaction.journal.company_id,
+                "department_id": transaction.journal.department_id,
                 "supplier_id": transaction.journal.supplier_id,
                 "reference_no": transaction.journal.reference_no,
                 "date": transaction.journal.date,
@@ -442,11 +443,12 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, company_id:
                 "amount": transaction.amount,
                 "is_type": transaction.is_type,
              } for transaction in chart.transaction if ((company_id == 0 or transaction.journal.company_id == company_id) and 
+                                                        (department_id == 0 or transaction.journal.department_id == department_id) and 
                                                         (supplier_id == 0 or transaction.journal.supplier_id == supplier_id) and 
                                                         (from_date <= transaction.journal.date <= to_date + timedelta(days=1))
                                                         )]
-        } for chart in frame.charts]
-    } for frame in frames]
+        } for chart in frame.charts if ((chart_id == 0 or chart.id == chart_id))]
+    } for frame in frames if ((frame_id == 0 or frame.id == frame_id))]
 
     return frames
     

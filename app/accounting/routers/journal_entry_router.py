@@ -10,9 +10,9 @@ get_db = DatabaseSessionMaker("shydans_db")
 
 
 @router.get("/filter-all-by-frame/")
-async def read_journals(db: Session = Depends(get_db), from_date: Optional[str] = None, to_date: Optional[str] = None, company_id: int =0, supplier_id: int = 0):
+async def read_journals(db: Session = Depends(get_db), from_date: Optional[str] = None, to_date: Optional[str] = None, frame_id: int = 0, chart_id: int =0, company_id: int =0, department_id: int = 0, supplier_id: int = 0):
     """ List Journal Entry all by frame. """
-    return crud.get_journals_by_frame(db=db, from_date=from_date, to_date=to_date, company_id=company_id, supplier_id=supplier_id)
+    return crud.get_journals_by_frame(db=db, from_date=from_date, to_date=to_date, frame_id=frame_id, chart_id=chart_id, company_id=company_id, department_id=department_id, supplier_id=supplier_id)
 
 @router.get("/")
 async def read_journals(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):

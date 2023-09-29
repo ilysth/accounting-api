@@ -3,10 +3,27 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class ChartBase(BaseModel):
-    account_name: str
-    account_type: str
+class FrameBase(BaseModel):
+    name: str
     report_type: str
+    code: str
+
+class FrameCreate(FrameBase):
+    pass
+
+
+class Frame(FrameBase):
+    id: int
+    
+    class Config:
+        orm_mode = True
+        
+        
+class ChartBase(BaseModel):
+    frame_id: int
+    name: str
+    account_type: str
+    code: str
 
 
 class ChartCreate(ChartBase):
@@ -20,16 +37,47 @@ class Chart(ChartBase):
         orm_mode = True
 
 
+class CompanyBase(BaseModel):
+    name: str
+    code: str
+
+
+class CompanyCreate(CompanyBase):
+    pass
+
+
+class Company(CompanyBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+        
+
+class DepartmentBase(BaseModel):
+    company_id: int
+    name: str
+    code: str
+
+
+class DepartmentCreate(DepartmentBase):
+    pass
+
+
+class Department(DepartmentBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+        
+
 class JournalBase(BaseModel):
     supplier_id: Optional[int]
-    document_no: Optional[str]
-    debit_acct_id: int
-    credit_acct_id: int
-    debit: float
-    credit: float
-    date: Optional[datetime] = None
+    company_id: int
+    department_id: Optional[int]
+    reference_no: Optional[str]
+    date: datetime
     notes: Optional[str]
-    is_supplier: int
+    is_supplier: Optional[int]
 
 
 class JournalCreate(JournalBase):
@@ -42,16 +90,38 @@ class Journal(JournalBase):
     class Config:
         orm_mode = True
 
+
+class TransactionBase(BaseModel):
+    journal_id: int
+    chart_id: int
+    amount: float
+    is_type: int
+
+
+class TransactionCreate(TransactionBase):
+    pass
+
+
+class Transaction(TransactionBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+       
 class CSVJournal(BaseModel):
     date: Optional[datetime]
     is_supplier: int
     debit_acct_id: int
     credit_acct_id: int
+    debit_particulars: Optional[str]
+    credit_particulars: Optional[str]
     debit: float
     credit: float
 
     class Config:
         orm_mode = True
+
 
 class SupplierBase(BaseModel):
     business_type: str

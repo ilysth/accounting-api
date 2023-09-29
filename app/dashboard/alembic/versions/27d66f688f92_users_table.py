@@ -17,7 +17,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TABLE `shydans_db`.`dashboard_users` (`id` INT NOT NULL AUTO_INCREMENT , `username` VARCHAR(255) NOT NULL , `password` VARCHAR(255) NOT NULL , `first_name` VARCHAR(255) NOT NULL , `last_name` VARCHAR(255) NOT NULL , `role` INT NOT NULL , `created_at` DATETIME on update CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP , `creation_update` DATE NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;")
+    op.execute("CREATE TABLE `shydans_db`.`dashboard_users` (`id` INT NOT NULL AUTO_INCREMENT , `username` VARCHAR(255) NULL , `password` VARCHAR(255) NULL , `role` INT NULL , `fname` VARCHAR(255) NULL , `lname` VARCHAR(255) NULL , `email` VARCHAR(255) NULL , `contact` VARCHAR(255) NULL , `image` VARCHAR(255) NULL , `apps` VARCHAR(255) NULL , `country` INT NULL , `creation_date` DATE NOT NULL , `creation_update` DATETIME on update CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP , `is_superuser` BOOLEAN NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;")
 
 def downgrade() -> None:
     op.drop_table("dashboard_users")

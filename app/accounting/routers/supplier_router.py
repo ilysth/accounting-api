@@ -17,12 +17,12 @@ async def create_supplier(supplier: schemas.SupplierCreate, db: Session = Depend
     """ Add Supplier. """
     return crud.create_supplier(db=db, supplier=supplier)
 
-@router.put("/{id}", response_model=schemas.Supplier)
+@router.put("/{id}/", response_model=schemas.Supplier)
 async def update_supplier(supplier: schemas.SupplierCreate, id: int, db: Session = Depends(get_db)):
     """ Update Supplier """
     return crud.update_supplier(db=db, id=id, supplier=supplier)
 
-@router.delete("/{id}", response_model=schemas.Supplier)
+@router.delete("/{id}/", response_model=schemas.Supplier)
 async def delete_supplier(id: int, db: Session = Depends(get_db)):
     """ Remove Supplier """
     return crud.delete_supplier(db=db, id=id)

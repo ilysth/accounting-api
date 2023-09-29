@@ -9,17 +9,17 @@ router = APIRouter(prefix="/journals", tags=["Journal Entry Resources"])
 get_db = DatabaseSessionMaker("shydans_db")
 
 
-@router.get("/all-by-frame/")
-async def read_journals(db: Session = Depends(get_db)):
+@router.get("/filter-all-by-frame/")
+async def read_journals(db: Session = Depends(get_db), from_date: Optional[str] = None, to_date: Optional[str] = None, company_id: int =0, supplier_id: int = 0):
     """ List Journal Entry all by frame. """
-    return crud.get_journals_by_frame(db=db)
+    return crud.get_journals_by_frame(db=db, from_date=from_date, to_date=to_date, company_id=company_id, supplier_id=supplier_id)
 
 @router.get("/")
 async def read_journals(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     """ List Journal Entry. """
     return crud.get_journals(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
-@router.get("/{id}")
+@router.get("/{id}/")
 async def read_journals(id: int, db: Session = Depends(get_db)):
     """ Journal Entry by ID. """
     return crud.get_journals_by_id(db=db, id=id)
@@ -29,12 +29,12 @@ async def create_journal(journal: schemas.JournalCreate, db: Session = Depends(g
     """ Add Journal Entry """
     return crud.create_journal(db=db, journal=journal)
 
-@router.put("/{id}", response_model=schemas.Journal)
+@router.put("/{id}/", response_model=schemas.Journal)
 async def update_journal(journal: schemas.JournalCreate, id: int, db: Session = Depends(get_db)):
     """ Update Journal Entry """
     return crud.update_journal(db=db, id=id, journal=journal)
 
-@router.delete("/{id}", response_model=schemas.Journal)
+@router.delete("/{id}/", response_model=schemas.Journal)
 async def delete_transaction(id: int, db: Session = Depends(get_db)):
     """ Remove Journal Entry """
     return crud.delete_journal(db=db, id=id)

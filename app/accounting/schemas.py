@@ -73,6 +73,7 @@ class Department(DepartmentBase):
 class JournalBase(BaseModel):
     supplier_id: Optional[int]
     company_id: int
+    department_id: Optional[int]
     reference_no: Optional[str]
     date: datetime
     notes: Optional[str]

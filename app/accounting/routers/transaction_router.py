@@ -18,12 +18,12 @@ async def create_transaction(transaction: schemas.TransactionCreate, db: Session
     """ Add Transacation """
     return crud.create_transaction(db=db, transaction=transaction)
 
-@router.put("/{id}", response_model=schemas.Transaction)
+@router.put("/{id}/", response_model=schemas.Transaction)
 async def update_transaction(transaction: schemas.TransactionCreate, id: int, db: Session = Depends(get_db)):
     """ Update Transacation """
     return crud.update_transaction(db=db, id=id, transaction=transaction)
 
-@router.delete("/{id}", response_model=schemas.Transaction)
+@router.delete("/{id}/", response_model=schemas.Transaction)
 async def delete_transaction(id: int, db: Session = Depends(get_db)):
     """ Remove Transacation """
     return crud.delete_transaction(db=db, id=id)

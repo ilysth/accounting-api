@@ -1,10 +1,8 @@
+from datetime import timedelta, datetime
 from sqlalchemy.orm import Session
 from app.accounting import schemas, models
-from fastapi import HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Dict
-from collections import defaultdict
-import json
+from fastapi import HTTPException
+from sqlalchemy.orm import joinedload
 
 def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     charts_db = db.query(models.Frame)
@@ -39,18 +37,19 @@ def update_frame(db: Session, id: int, frame: schemas.FrameCreate):
     if db_frame is not None:
         db_frame.name = frame.name
         db_frame.report_type = frame.report_type
-        db_frame.account_code = frame.account_code
+        db_frame.code = frame.code
 
         db.commit()
         db.refresh(db_frame)
         return db_frame
  
 def delete_frame(db: Session, id: int):
-    db_frame = db.query(models.Frame).get(id)
     chart = db.query(models.Chart).filter(models.Chart.frame_id == id).first()
 
     if chart is not None:
         raise HTTPException(status_code=404, detail="Cannot be deleted. Account Frames have sub-accounts in use.")
+
+    db_frame = db.query(models.Frame).get(id)
 
     if db_frame is None:
         raise HTTPException(status_code=404, detail="Account Frame not found.")
@@ -75,7 +74,14 @@ def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
 
     filtered_result = charts_db.order_by(
         sort).offset(skip).limit(limit).all()
+    
     return filtered_result
+
+def get_charts_by_frame(db: Session, frame_id: int):
+    charts_db = db.query(models.Chart).filter(models.Chart.frame_id == frame_id).all()
+    
+    return charts_db
+
 
 def create_chart(db: Session, chart: schemas.ChartCreate):
     frame = db.query(models.Frame).filter(models.Frame.id == chart.frame_id).first()
@@ -93,23 +99,28 @@ def update_chart(db: Session, id: int, chart: schemas.ChartCreate):
     db_chart = db.query(models.Chart).get(id)
 
     if db_chart is None:
-        raise HTTPException(status_code=404, detail="Account Name not found.")
+        raise HTTPException(status_code=404, detail="Accounts not found.")
 
     if db_chart is not None:
+        db_chart.frame_id = chart.frame_id
         db_chart.name = chart.name
         db_chart.account_type = chart.account_type
-        db_chart.account_code = chart.account_code
+        db_chart.code = chart.code
 
         db.commit()
         db.refresh(db_chart)
         return db_chart
  
 def delete_chart(db: Session, id: int):
-    # todo: check account if in use in in credit and debit table, if exist dont let to delete account
+    transaction = db.query(models.Transaction).filter(models.Transaction.chart_id == id).first()
+
+    if transaction is not None:
+        raise HTTPException(status_code=404, detail="Cannot be deleted. Account in use.")
+    
     db_chart = db.query(models.Chart).get(id)
 
     if db_chart is None:
-        raise HTTPException(status_code=404, detail="Account Name not found.")
+        raise HTTPException(status_code=404, detail="Account not found.")
 
     if db_chart is not None:
         db.delete(db_chart)
@@ -148,7 +159,7 @@ def update_company(db: Session, id: int, company: schemas.CompanyCreate):
 
     if db_company is not None:
         db_company.name = company.name
-        db_company.company_code = company.company_code
+        db_company.code = company.code
 
         db.commit()
         db.refresh(db_company)
@@ -160,7 +171,7 @@ def delete_company(db: Session, id: int):
     if department is not None:
         raise HTTPException(status_code=404, detail="Cannot be deleted. Company have departments in use.")
 
-    transaction = db.query(models.Transaction).filter(models.Transaction.company_id == id).first()
+    transaction = db.query(models.Transaction).filter(models.Journal.company_idx == id).first()
 
     if transaction is not None:
         raise HTTPException(status_code=404, detail="Cannot be deleted. Company have transaction/s.")
@@ -206,13 +217,18 @@ def create_department(db: Session, department: schemas.DepartmentCreate):
 
 def update_department(db: Session, id: int, department: schemas.DepartmentCreate):
     db_dept = db.query(models.Department).get(id)
+    company = db.query(models.Company).filter(models.Company.id == department.company_id).first()
 
+    if not company:
+        raise HTTPException(status_code=404, detail="Company dont exist.")
+    
     if db_dept is None:
         raise HTTPException(status_code=404, detail="Department not found.")
 
     if db_dept is not None:
+        db_dept.company_id = department.company_id
         db_dept.name = department.name
-        db_dept.dept_code = department.dept_code
+        db_dept.code = department.code
 
         db.commit()
         db.refresh(db_dept)
@@ -325,6 +341,21 @@ def get_journals_by_id(db: Session, id: int):
     return debit_db 
 
 def create_journal(db: Session, journal: schemas.JournalCreate):
+    supplier = db.query(models.Supplier).filter(models.Supplier.id == journal.supplier_id).first()
+
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier dont exist.")
+    
+    company = db.query(models.Company).filter(models.Company.id == journal.company_id).first()
+
+    if not company:
+        raise HTTPException(status_code=404, detail="Company dont exist.")
+    
+    department = db.query(models.Department).filter(models.Department.id == journal.department_id).first()
+
+    if not department:
+        raise HTTPException(status_code=404, detail="Department dont exist.")
+    
     debit_db = models.Journal(**journal .dict())
 
     db.add(debit_db)
@@ -338,9 +369,25 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
     if journal_db is None:
         raise HTTPException(status_code=404, detail="Journal Entry not found.")
 
+    supplier = db.query(models.Supplier).filter(models.Supplier.id == journal.supplier_id).first()
+
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier dont exist.")
+    
+    company = db.query(models.Company).filter(models.Company.id == journal.company_id).first()
+
+    if not company:
+        raise HTTPException(status_code=404, detail="Company dont exist.")
+    
+    department = db.query(models.Department).filter(models.Department.id == journal.department_id).first()
+
+    if not department:
+        raise HTTPException(status_code=404, detail="Department dont exist.")
+    
     if journal_db is not None:
         journal_db.supplier_id = journal.supplier_id
         journal_db.company_id = journal.company_id
+        journal_db.department_id = journal.department_id
         journal_db.reference_no = journal.reference_no
         journal_db.date = journal.date
         journal_db.notes = journal.notes
@@ -360,65 +407,49 @@ def delete_journal(db: Session, id: int):
         db.delete(journal_db)
         db.commit()
         return journal_db
-       
-def get_journals_by_frame(db: Session):
-    frames = db.query(models.Frame).all()
-    charts = db.query(models.Chart).all()
-    transactions = db.query(models.Transaction).all()
+    
+def get_journals_by_frame(db: Session, from_date: str, to_date: str, company_id: int = 0, supplier_id: int = 0):
+    frames = db.query(models.Frame).options(joinedload(models.Frame.charts).joinedload(models.Chart.transaction)).all()
 
-    formatted_frames = []
+    if not from_date or not to_date:
+        raise HTTPException(status_code=404, detail="Both from_date and to_date must be provided and not empty.")
+    
+    from_date = datetime.strptime(from_date, '%Y-%m-%d')
+    to_date = datetime.strptime(to_date, '%Y-%m-%d')
 
-    # Create a dictionary to store charts by frame_id for quick lookup
-    charts_by_frame_id = {}
-    for chart in charts:
-        if chart.frame_id not in charts_by_frame_id:
-            charts_by_frame_id[chart.frame_id] = []
-        charts_by_frame_id[chart.frame_id].append({
+    frames = [{
+        "id": frame.id,
+        "name": frame.name,
+        "report_type": frame.report_type,
+        "code": frame.code,
+        "created_at": frame.created_at,
+        "parent_id": 0,
+        "sub_accounts": [{
             "id": chart.id,
             "name": chart.name,
+            "account_type": chart.account_type,
             "code": chart.code,
-            "created_at": str(chart.created_at),  # Convert datetime to string
+            "created_at": chart.created_at,
             "parent_id": chart.frame_id,
-            "transactions": []  # Initialize transactions list
-            # Add other chart attributes as needed
-        })
+            "transactions": [{
+                "id": transaction.id,
+                "company_id": transaction.journal.company_id,
+                "supplier_id": transaction.journal.supplier_id,
+                "reference_no": transaction.journal.reference_no,
+                "date": transaction.journal.date,
+                "notes": transaction.journal.notes,
+                "is_supplier": transaction.journal.is_supplier,
+                "amount": transaction.amount,
+                "is_type": transaction.is_type,
+             } for transaction in chart.transaction if ((company_id == 0 or transaction.journal.company_id == company_id) and 
+                                                        (supplier_id == 0 or transaction.journal.supplier_id == supplier_id) and 
+                                                        (from_date <= transaction.journal.date <= to_date + timedelta(days=1))
+                                                        )]
+        } for chart in frame.charts]
+    } for frame in frames]
 
-    # Create a dictionary to store transactions by chart_id for quick lookup
-    transactions_by_chart_id = {}
-    for transaction in transactions:
-        if transaction.chart_id not in transactions_by_chart_id:
-            transactions_by_chart_id[transaction.chart_id] = []
-        transactions_by_chart_id[transaction.chart_id].append({
-            "id": transaction.id,
-            "journal_id": transaction.journal_id,
-            "amount": transaction.amount,
-            "date": str(transaction.created_at),  # Convert datetime to string
-            "is_type": transaction.is_type,
-            # Add other transaction attributes as needed
-        })
-
-    for frame in frames:
-        # Create a dictionary for each frame
-        formatted_frame = {
-            "code": frame.code,
-            "id": frame.id,
-            "report_type": frame.report_type,
-            "name": frame.name,
-            "created_at": str(frame.created_at),  # Convert datetime to string
-            "parent_id": 0,
-            "sub_accounts": charts_by_frame_id.get(frame.id, [])  # Use the charts for this frame if available
-        }
-
-        # Iterate through the sub-accounts (charts) and add transactions
-        for chart in formatted_frame["sub_accounts"]:
-            chart["transactions"] = transactions_by_chart_id.get(chart["id"], [])
-
-        # Append the formatted frame to the list
-        formatted_frames.append(formatted_frame)
-
-    return formatted_frames
-
-
+    return frames
+    
 # def get_journals_by_filter(db: Session, from_date: str, to_date: str, account_id: int = 0, supplier_id: int = 0, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
 #     journals_db = db.query(models.Journal)
 

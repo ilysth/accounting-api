@@ -1,4 +1,4 @@
-"""debit
+"""transaction
 
 Revision ID: 2e54d7602cc7
 Revises: 8e2f7994d23a

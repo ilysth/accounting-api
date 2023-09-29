@@ -27,7 +27,6 @@ class Chart(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
 
     frame = relationship("Frame", back_populates="charts")
-
     transaction = relationship("Transaction", back_populates="chart", cascade="all, delete-orphan")
 
 class Supplier(Base):
@@ -46,6 +45,7 @@ class Supplier(Base):
     dti = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now)
 
+    journal = relationship("Journal", back_populates="supplier", cascade="all, delete-orphan")
 
 class Company(Base):
     __tablename__ = "accounting_company"
@@ -60,7 +60,7 @@ class Company(Base):
 
 
 class Department(Base):
-    __tablename__ = "accounting_company_department"
+    __tablename__ = "accounting_department"
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("accounting_company.id"))
@@ -69,6 +69,7 @@ class Department(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
 
     company = relationship("Company", back_populates="departments")
+    journal = relationship("Journal", backref="department", cascade="all, delete-orphan")
 
 
 class Journal(Base):
@@ -77,6 +78,7 @@ class Journal(Base):
     id = Column(Integer, primary_key=True, index=True)
     supplier_id = Column(Integer, ForeignKey("accounting_supplier.id"), nullable=True)
     company_id = Column(Integer, ForeignKey("accounting_company.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("accounting_department.id"), nullable=True)
     reference_no = Column(String(255), nullable=True)
     date = Column(DateTime, nullable=True)
     notes = Column(String(255), nullable=True)
@@ -85,7 +87,8 @@ class Journal(Base):
 
     transaction = relationship("Transaction", back_populates="journal", cascade="all, delete-orphan")
     company = relationship("Company", back_populates="journal")
-
+    supplier = relationship("Supplier", back_populates="journal")
+    
 
 class Transaction(Base):
     __tablename__ = "accounting_transaction"
@@ -100,6 +103,7 @@ class Transaction(Base):
     journal = relationship("Journal", back_populates="transaction")
     chart = relationship("Chart", back_populates="transaction")
 
+    
 class DebitBalance(Base):
     __tablename__ = "accounting_debit_balance"
 

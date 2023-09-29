@@ -17,12 +17,12 @@ async def create_company(company: schemas.CompanyCreate, db: Session = Depends(g
     """ Add Company. """
     return crud.create_company(db=db, company=company)
 
-@router.put("/{id}", response_model=schemas.Company)
+@router.put("/{id}/", response_model=schemas.Company)
 async def update_company(company: schemas.CompanyCreate, id: int, db: Session = Depends(get_db)):
     """ Update Company """
     return crud.update_company(db=db, id=id, company=company)
 
-@router.delete("/{id}", response_model=schemas.Company)
+@router.delete("/{id}/", response_model=schemas.Company)
 async def delete_company(id: int, db: Session = Depends(get_db)):
     """ Remove Company """
     return crud.delete_company(db=db, id=id)

@@ -441,6 +441,7 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
                 "company_id": transaction.journal.company_id,
                 "department_id": transaction.journal.department_id,
                 "supplier_id": transaction.journal.supplier_id,
+                "particulars": transaction.particulars,
                 "reference_no": transaction.journal.reference_no,
                 "date": transaction.journal.date,
                 "notes": transaction.journal.notes,

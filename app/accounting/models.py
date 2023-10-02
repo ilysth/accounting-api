@@ -76,9 +76,9 @@ class Journal(Base):
     __tablename__ = "accounting_journal"
 
     id = Column(Integer, primary_key=True, index=True)
-    supplier_id = Column(Integer, ForeignKey("accounting_supplier.id"), nullable=True)
     company_id = Column(Integer, ForeignKey("accounting_company.id"), nullable=True)
     department_id = Column(Integer, ForeignKey("accounting_department.id"), nullable=True)
+    supplier_id = Column(Integer, ForeignKey("accounting_supplier.id"), nullable=True)
     reference_no = Column(String(255), nullable=True)
     date = Column(DateTime, nullable=True)
     notes = Column(String(255), nullable=True)
@@ -96,7 +96,8 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     journal_id = Column(Integer, ForeignKey("accounting_journal.id"), nullable=True)
     chart_id = Column(Integer, ForeignKey("accounting_charts.id"), nullable=True)
-    amount = Column(Float, default=0)
+    amount = Column(Float, default=0.00)
+    particulars = Column(String(255), nullable=True)
     is_type = Column(Integer)
     created_at = Column(DateTime, default=datetime.datetime.now)
 

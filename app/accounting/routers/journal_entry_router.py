@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.accounting import crud, schemas
-from typing import Optional
+from typing import List, Optional
 from app.database import DatabaseSessionMaker
 
 router = APIRouter(prefix="/journals", tags=["Journal Entry Resources"])
@@ -10,29 +10,34 @@ get_db = DatabaseSessionMaker("shydans_db")
 
 
 @router.get("/filter-all-by-frame/")
-async def read_journals(db: Session = Depends(get_db), from_date: Optional[str] = None, to_date: Optional[str] = None, frame_id: int = 0, chart_id: int =0, company_id: int =0, department_id: int = 0, supplier_id: int = 0):
+async def read_journals(db: Session = Depends(get_db), from_date: Optional[str] = None, to_date: Optional[str] = None, frame_id: int = 0, chart_id: int = 0, company_id: int = 0, department_id: int = 0, supplier_id: int = 0):
     """ List Journal Entry all by frame. """
     return crud.get_journals_by_frame(db=db, from_date=from_date, to_date=to_date, frame_id=frame_id, chart_id=chart_id, company_id=company_id, department_id=department_id, supplier_id=supplier_id)
+
 
 @router.get("/")
 async def read_journals(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):
     """ List Journal Entry. """
     return crud.get_journals(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
+
+@router.post("/")
+async def create_journal_and_transactions(journal: schemas.JournalCreate, journal_transactions: List[schemas.TransactionCreate], db: Session = Depends(get_db)):
+    """ Add Journal Entry """
+    return crud.create_journal_and_transactions(db=db, journal=journal, journal_transactions=journal_transactions)
+
+
 @router.get("/{id}/")
 async def read_journals(id: int, db: Session = Depends(get_db)):
     """ Journal Entry by ID. """
     return crud.get_journals_by_id(db=db, id=id)
 
-@router.post("/")
-async def create_journal(journal: schemas.JournalCreate, db: Session = Depends(get_db)):
-    """ Add Journal Entry """
-    return crud.create_journal(db=db, journal=journal)
 
 @router.put("/{id}/", response_model=schemas.Journal)
 async def update_journal(journal: schemas.JournalCreate, id: int, db: Session = Depends(get_db)):
     """ Update Journal Entry """
     return crud.update_journal(db=db, id=id, journal=journal)
+
 
 @router.delete("/{id}/", response_model=schemas.Journal)
 async def delete_transaction(id: int, db: Session = Depends(get_db)):

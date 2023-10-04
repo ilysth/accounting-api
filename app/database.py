@@ -18,7 +18,7 @@ database_names = [
     "shydans_db",
 ]
 
-#Create a connection to the MySQL server then create databases that don't exist.
+# Create a connection to the MySQL server then create databases that don't exist.
 mysql_connection = mysql.connector.connect(
     host=MYSQL_HOST,
     port=MYSQL_PORT,
@@ -37,7 +37,8 @@ databases = {}
 for db_name in database_names:
     db_connect = f"mysql+mysqlconnector://root:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{db_name}"
     engine = create_engine(db_connect, pool_pre_ping=True)
-    databases[db_name] = sessionmaker(autocommit=False, autoflush=True, bind=engine)
+    databases[db_name] = sessionmaker(
+        autocommit=False, autoflush=True, bind=engine)
 
 
 def get_db(database_name: str):

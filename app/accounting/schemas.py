@@ -71,9 +71,9 @@ class Department(DepartmentBase):
         
 
 class JournalBase(BaseModel):
-    supplier_id: Optional[int]
     company_id: int
     department_id: Optional[int]
+    supplier_id: Optional[int]
     reference_no: Optional[str]
     date: datetime
     notes: Optional[str]
@@ -95,6 +95,7 @@ class TransactionBase(BaseModel):
     journal_id: int
     chart_id: int
     amount: float
+    particulars: Optional[str]
     is_type: int
 
 

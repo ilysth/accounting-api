@@ -4,7 +4,7 @@ from app.database import DatabaseSessionMaker
 
 app = FastAPI(title="APP Features", description="App Integration Resources")
 
-get_db = DatabaseSessionMaker("shydans_accounting")
+get_db = DatabaseSessionMaker("shydans_db")
         
 app.include_router(account_frame_router.router)
 app.include_router(chart_of_accounts_router.router)

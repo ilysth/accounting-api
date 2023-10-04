@@ -171,7 +171,7 @@ def delete_company(db: Session, id: int):
     if department is not None:
         raise HTTPException(status_code=404, detail="Cannot be deleted. Company have departments in use.")
 
-    transaction = db.query(models.Transaction).filter(models.Journal.company_idx == id).first()
+    transaction = db.query(models.Transaction).filter(models.Journal.company_id == id).first()
 
     if transaction is not None:
         raise HTTPException(status_code=404, detail="Cannot be deleted. Company have transaction/s.")
@@ -202,7 +202,12 @@ def get_departments(db: Session, sort_direction: str = "desc", skip: int = 0, li
     filtered_result = charts_db.order_by(
         sort).offset(skip).limit(limit).all()
     return filtered_result
-   
+
+def get_departments_by_company(db: Session, company_id: int):
+    departments_db = db.query(models.Department).filter(models.Department.company_id == company_id).all()
+    
+    return departments_db
+ 
 def create_department(db: Session, department: schemas.DepartmentCreate):
     company = db.query(models.Company).filter(models.Company.id == department.company_id).first()
 
@@ -436,6 +441,7 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
                 "company_id": transaction.journal.company_id,
                 "department_id": transaction.journal.department_id,
                 "supplier_id": transaction.journal.supplier_id,
+                "particulars": transaction.particulars,
                 "reference_no": transaction.journal.reference_no,
                 "date": transaction.journal.date,
                 "notes": transaction.journal.notes,

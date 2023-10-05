@@ -1,12 +1,14 @@
-from datetime   import datetime
-from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
+from pydantic import BaseModel
 
 
 class FrameBase(BaseModel):
     name: str
     report_type: str
     code: str
+    is_deleted: str
+
 
 class FrameCreate(FrameBase):
     pass
@@ -14,16 +16,17 @@ class FrameCreate(FrameBase):
 
 class Frame(FrameBase):
     id: int
-    
+
     class Config:
         orm_mode = True
-        
-        
+
+
 class ChartBase(BaseModel):
     frame_id: int
     name: str
     account_type: str
     code: str
+    is_deleted: str
 
 
 class ChartCreate(ChartBase):
@@ -40,6 +43,7 @@ class Chart(ChartBase):
 class CompanyBase(BaseModel):
     name: str
     code: str
+    is_deleted: str
 
 
 class CompanyCreate(CompanyBase):
@@ -51,12 +55,13 @@ class Company(CompanyBase):
 
     class Config:
         orm_mode = True
-        
+
 
 class DepartmentBase(BaseModel):
     company_id: int
     name: str
     code: str
+    is_deleted: str
 
 
 class DepartmentCreate(DepartmentBase):
@@ -68,7 +73,7 @@ class Department(DepartmentBase):
 
     class Config:
         orm_mode = True
-        
+
 
 class JournalBase(BaseModel):
     company_id: int
@@ -92,7 +97,7 @@ class Journal(JournalBase):
 
 
 class TransactionBase(BaseModel):
-    journal_id: int
+    journal_id: Optional[int]
     chart_id: int
     amount: float
     particulars: Optional[str]
@@ -109,7 +114,7 @@ class Transaction(TransactionBase):
     class Config:
         orm_mode = True
 
-       
+
 class CSVJournal(BaseModel):
     date: Optional[datetime]
     is_supplier: int
@@ -152,6 +157,7 @@ class DebitBase(BaseModel):
     name: str
     debit: float
 
+
 class DebitCreate(DebitBase):
     pass
 
@@ -166,6 +172,7 @@ class Debit(DebitBase):
 class CreditBase(BaseModel):
     name: str
     credit: float
+
 
 class CreditCreate(CreditBase):
     pass

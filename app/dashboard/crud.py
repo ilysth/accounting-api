@@ -19,20 +19,20 @@ from sqlalchemy import and_, desc, func, or_
 #     # Return user
 #     if user is None:
 #         raise HTTPException(status_code=404, detail="Incorrect username or password")
-    
+
 #     # Verify the password
 #     if verify_password(password, user.password):
 #         return user
 #     else:
 #         raise HTTPException(status_code=404, detail="Incorrect username or password")
-    
+
 
 # def create_user(db: Session, user: schemas.UserCreate):
 #     db_user_check = get_user_from_db(username=user.username , db=db)
-    
+
 #     if db_user_check:
 #         raise HTTPException(status_code=404, detail="Username already taken")
-    
+
 #     hashed_password = bcrypt.hash(user.password)  # Hash the password
 #     db_user = models.User(
 #         username=user.username,

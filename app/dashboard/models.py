@@ -16,6 +16,7 @@ Base = declarative_base()
 #     created_at = Column(DateTime, default=datetime.datetime.now)
 #     creation_update = Column(DateTime, nullable=True)
 
+
 class Application(Base):
     __tablename__ = "dashboard_apps"
     id = Column(Integer, primary_key=True, index=True)

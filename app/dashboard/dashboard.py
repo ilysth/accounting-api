@@ -98,7 +98,8 @@ def batch_create_applications(
 @app.post("/apps/upload/{app_dir}/", response_model=schemas.ApplicationFile)
 def upload_file(app_dir: str, app_file: UploadFile = File(...)):
     app_file_bytes = app_file.file.read()
-    new_file = open("app/dashboard/apps/" + app_dir + "/" + app_file.filename, "+wb")
+    new_file = open("app/dashboard/apps/" + app_dir +
+                    "/" + app_file.filename, "+wb")
     new_file.write(app_file_bytes)
     new_file.close()
     return {

@@ -13,15 +13,12 @@ async def read_transactions(db: Session = Depends(get_db), sort_direction: str =
     """ List of Transacations """
     return crud.get_transactions(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
-@router.post("/")
-async def create_transaction(transaction: schemas.TransactionCreate, db: Session = Depends(get_db)):
-    """ Add Transacation """
-    return crud.create_transaction(db=db, transaction=transaction)
 
 @router.put("/{id}/", response_model=schemas.Transaction)
 async def update_transaction(transaction: schemas.TransactionCreate, id: int, db: Session = Depends(get_db)):
     """ Update Transacation """
     return crud.update_transaction(db=db, id=id, transaction=transaction)
+
 
 @router.delete("/{id}/", response_model=schemas.Transaction)
 async def delete_transaction(id: int, db: Session = Depends(get_db)):

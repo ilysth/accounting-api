@@ -22,9 +22,9 @@ async def read_journals(db: Session = Depends(get_db), sort_direction: str = "de
 
 
 @router.post("/")
-async def create_journal_and_transactions(journal: schemas.JournalCreate, journal_transactions: List[schemas.TransactionCreate], db: Session = Depends(get_db)):
+async def create_journal_and_transactions(journal: schemas.JournalCreate, transactions: List[schemas.TransactionCreate], db: Session = Depends(get_db)):
     """ Add Journal Entry """
-    return crud.create_journal_and_transactions(db=db, journal=journal, journal_transactions=journal_transactions)
+    return crud.create_journal_and_transactions(db=db, journal=journal, transactions=transactions)
 
 
 @router.get("/{id}/")

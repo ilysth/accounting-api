@@ -401,7 +401,7 @@ def get_journals_by_id(db: Session, id: int):
 
 
 def create_journal_and_transactions(
-    journal_transactions: List[schemas.TransactionCreate],
+    transactions: List[schemas.TransactionCreate],
     journal: schemas.JournalCreate,
     db: Session,
 ):
@@ -428,7 +428,7 @@ def create_journal_and_transactions(
     db.refresh(journal_entry)
 
     transaction_entries = []
-    for transaction_data in journal_transactions:
+    for transaction_data in transactions:
         transaction_data_dict = transaction_data.dict(exclude={"journal_id"})
         transaction = models.Transaction(
             journal_id=journal_entry.id, **transaction_data_dict)

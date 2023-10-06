@@ -21,7 +21,7 @@ async def read_journals(db: Session = Depends(get_db), sort_direction: str = "de
     return crud.get_journals(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_journal_and_transactions(journal: schemas.JournalCreate, transactions: List[schemas.TransactionCreate], db: Session = Depends(get_db)):
     """ Add Journal Entry """
     return crud.create_journal_and_transactions(db=db, journal=journal, transactions=transactions)
@@ -105,9 +105,9 @@ async def delete_transaction(id: int, db: Session = Depends(get_db)):
 #         if from_date and to_date is None:
 #             raise HTTPException(status_code=404, detail="from_date or to_date should not be empty.")
 
-# # @router.post("/import-journal", status_code=status.HTTP_201_CREATED)
-# # async def import_journals(
-# #     csv_journal: list[schemas.JournalCreate], db: Session = Depends(get_db)
+# @router.post("/import-journal", status_code=status.HTTP_201_CREATED)
+# async def import_journals(
+#     csv_journal: list[schemas.JournalCreate], db: Session = Depends(get_db)
 # # ):
 # #     return crud.import_journals(db=db, csv_journal=csv_journal)
 

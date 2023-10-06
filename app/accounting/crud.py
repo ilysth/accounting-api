@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.accounting import schemas, models
 from fastapi import HTTPException
@@ -314,6 +314,15 @@ def get_transactions(db: Session, sort_direction: str = "desc", skip: int = 0, l
         sort).offset(skip).limit(limit).all()
     return filtered_result
 
+
+def create_transaction(db: Session, journal_id: int, transaction_data: schemas.TransactionCreate) -> models.Transaction:
+    # Create the transaction
+    transaction_data_dict = transaction_data.dict(exclude={"journal_id"})
+    transaction = models.Transaction(
+        journal_id=journal_id, **transaction_data_dict)
+    db.add(transaction)
+    return transaction
+
 # def create_transaction(db: Session, transaction : schemas.TransactionCreate):
 #     journal = db.query(models.Journal).filter(models.Journal.id == transaction.journal_id).first()
 
@@ -400,65 +409,74 @@ def get_journals_by_id(db: Session, id: int):
     return debit_db
 
 
-def create_journal_and_transactions(
-    transactions: List[schemas.TransactionCreate],
-    journal: schemas.JournalCreate,
-    db: Session,
-):
-
-    supplier = db.query(models.Supplier).filter(
-        models.Supplier.id == journal.supplier_id).first()
-    if not supplier:
-        raise HTTPException(status_code=404, detail="Supplier doesn't exist.")
-
+def create_journal(db: Session, journal: schemas.JournalCreate) -> models.Journal:
+    # Check if the company exists
     company = db.query(models.Company).filter(
         models.Company.id == journal.company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company doesn't exist.")
 
-    department = db.query(models.Department).filter(
-        models.Department.id == journal.department_id).first()
-    if not department:
-        raise HTTPException(
-            status_code=404, detail="Department doesn't exist.")
-
-    journal_entry = models.Journal(**journal.dict())
-    db.add(journal_entry)
+    # Create the journal
+    journal_db = models.Journal(**journal.dict())
+    db.add(journal_db)
     db.commit()
-    db.refresh(journal_entry)
+    db.refresh(journal_db)
+    return journal_db
+
+
+def create_journal_and_transactions(
+    transactions: List[schemas.TransactionCreate],
+    journal: schemas.JournalCreate,
+    db: Session,
+    supplier_id: Optional[int] = None,
+    department_id: Optional[int] = None,
+):
+    journal_db = create_journal(db, journal)
+
+    supplier = None
+    if supplier_id is not None:
+        supplier = db.query(models.Supplier).filter(
+            models.Supplier.id == supplier_id).first()
+        if not supplier:
+            raise HTTPException(
+                status_code=404, detail="Supplier doesn't exist.")
+
+    department = None
+    if department_id is not None:
+        department = db.query(models.Department).filter(
+            models.Department.id == department_id).first()
+        if not department:
+            raise HTTPException(
+                status_code=404, detail="Department doesn't exist.")
 
     transaction_entries = []
     for transaction_data in transactions:
-        transaction_data_dict = transaction_data.dict(exclude={"journal_id"})
-        transaction = models.Transaction(
-            journal_id=journal_entry.id, **transaction_data_dict)
-        db.add(transaction)
+        transaction = create_transaction(db, journal_db.id, transaction_data)
         transaction_entries.append(transaction)
 
+    result = {
+        "journal": {
+            "company_id": journal_db.company_id,
+            "department_id": journal_db.department_id,
+            "supplier_id": journal_db.supplier_id,
+            "reference_no": journal_db.reference_no,
+            "date": journal_db.date,
+            "notes": journal_db.notes,
+            "is_supplier": journal_db.is_supplier
+        },
+        "transactions": [
+            {
+                "chart_id": entry.chart_id,
+                "amount": entry.amount,
+                "particulars": entry.particulars,
+                "is_type": entry.is_type
+            }
+            for entry in transaction_entries
+        ]
+    }
+
     db.commit()
-
-# def create_journal(db: Session, journal: schemas.JournalCreate):
-#     supplier = db.query(models.Supplier).filter(models.Supplier.id == journal.supplier_id).first()
-
-#     if not supplier:
-#         raise HTTPException(status_code=404, detail="Supplier dont exist.")
-
-#     company = db.query(models.Company).filter(models.Company.id == journal.company_id).first()
-
-#     if not company:
-#         raise HTTPException(status_code=404, detail="Company dont exist.")
-
-#     department = db.query(models.Department).filter(models.Department.id == journal.department_id).first()
-
-#     if not department:
-#         raise HTTPException(status_code=404, detail="Department dont exist.")
-
-#     debit_db = models.Journal(**journal .dict())
-
-#     db.add(debit_db)
-#     db.commit()
-#     db.refresh(debit_db )
-#     return debit_db
+    return result
 
 
 def update_journal(db: Session, id: int, journal: schemas.JournalCreate):

@@ -479,6 +479,42 @@ def create_journal_and_transactions(
     return result
 
 
+def get_all_journals_and_transactions(db: Session):
+    # Retrieve all journal entries
+    journals = db.query(models.Journal).all()
+
+    journal_data_list = []
+    for journal in journals:
+        # Retrieve associated transactions for each journal
+        transactions = db.query(models.Transaction).filter(
+            models.Transaction.journal_id == journal.id).all()
+
+        # Convert the data to the desired format
+        journal_data = {
+            "journal": {
+                "date": journal.date.strftime("%Y-%m-%d %H:%M:%S"),
+                "company_id": journal.company_id,
+                "notes": journal.notes,
+                # Replace with the actual department name
+                "department_id": "Software Development",
+                "reference_no": journal.reference_no,
+                "is_supplier": journal.is_supplier,
+                "transactions": [
+                    {
+                        "chart_id": transaction.chart_id,
+                        "amount": str(transaction.amount),
+                        "particulars": transaction.particulars,
+                        "is_type": transaction.is_type,
+                    }
+                    for transaction in transactions
+                ],
+            }
+        }
+        journal_data_list.append(journal_data)
+
+    return journal_data_list
+
+
 def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
     journal_db = db.query(models.Journal).get(id)
 

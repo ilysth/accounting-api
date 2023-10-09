@@ -21,7 +21,12 @@ async def read_journals(db: Session = Depends(get_db), sort_direction: str = "de
     return crud.get_journals(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.get("/transactions/")
+def read_journal_and_transactions(db: Session = Depends(get_db)):
+    return crud.get_all_journals_and_transactions(db)
+
+
+@router.post("/transactions/", status_code=status.HTTP_201_CREATED)
 async def create_journal_and_transactions(journal: schemas.JournalCreate, transactions: List[schemas.TransactionCreate], db: Session = Depends(get_db)):
     """ Add Journal Entry """
     return crud.create_journal_and_transactions(db=db, journal=journal, transactions=transactions)

@@ -7,7 +7,7 @@ class FrameBase(BaseModel):
     name: str
     report_type: str
     code: str
-    is_deleted: str
+    is_deleted: int
 
 
 class FrameCreate(FrameBase):
@@ -26,7 +26,7 @@ class ChartBase(BaseModel):
     name: str
     account_type: str
     code: str
-    is_deleted: str
+    is_deleted: int
 
 
 class ChartCreate(ChartBase):
@@ -43,7 +43,7 @@ class Chart(ChartBase):
 class CompanyBase(BaseModel):
     name: str
     code: str
-    is_deleted: str
+    is_deleted: int
 
 
 class CompanyCreate(CompanyBase):
@@ -61,7 +61,7 @@ class DepartmentBase(BaseModel):
     company_id: int
     name: str
     code: str
-    is_deleted: str
+    is_deleted: int
 
 
 class DepartmentCreate(DepartmentBase):

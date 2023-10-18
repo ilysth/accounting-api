@@ -15,10 +15,10 @@ async def read_journals(db: Session = Depends(get_db), from_date: Optional[str] 
     return crud.get_journals_by_frame(db=db, from_date=from_date, to_date=to_date, frame_id=frame_id, chart_id=chart_id, company_id=company_id, department_id=department_id, supplier_id=supplier_id)
 
 
-@router.get("/")
-async def read_journals(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):
-    """ List Journal Entry. """
-    return crud.get_journals(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
+# @router.get("/")
+# async def read_journals(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+#     """ List Journal Entry. """
+#     return crud.get_journals(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 
 
 @router.get("/transactions/")
@@ -27,9 +27,18 @@ def read_journal_and_transactions(db: Session = Depends(get_db)):
 
 
 @router.post("/transactions/", status_code=status.HTTP_201_CREATED)
-async def create_journal_and_transactions(journal: schemas.JournalCreate, transactions: List[schemas.TransactionCreate], db: Session = Depends(get_db)):
+async def create_journal_and_transactions(journal: schemas.JournalCreate, db: Session = Depends(get_db)):
     """ Add Journal Entry """
-    return crud.create_journal_and_transactions(db=db, journal=journal, transactions=transactions)
+    return crud.create_journal_and_transactions(db=db, journal=journal)
+
+
+@router.put("/transactions/{id}/")
+def update_journal_and_transactions(
+    id: int,
+    journal: schemas.JournalCreate,
+    db: Session = Depends(get_db)
+):
+    return crud.update_journal_and_transactions(db=db, journal=journal, id=id)
 
 
 @router.get("/{id}/")

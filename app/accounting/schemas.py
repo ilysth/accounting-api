@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -75,6 +75,25 @@ class Department(DepartmentBase):
         orm_mode = True
 
 
+class TransactionBase(BaseModel):
+    id: int
+    journal_id: Optional[int]
+    chart_id: int
+    amount: float
+    particulars: Optional[str]
+    is_type: Optional[int]
+
+
+class TransactionCreate(TransactionBase):
+    pass
+
+
+class Transaction(TransactionBase):
+
+    class Config:
+        orm_mode = True
+
+
 class JournalBase(BaseModel):
     company_id: int
     department_id: Optional[int]
@@ -83,6 +102,7 @@ class JournalBase(BaseModel):
     date: datetime
     notes: Optional[str]
     is_supplier: Optional[int]
+    transactions: List[TransactionCreate] = None
 
 
 class JournalCreate(JournalBase):
@@ -90,25 +110,6 @@ class JournalCreate(JournalBase):
 
 
 class Journal(JournalBase):
-    id: int
-
-    class Config:
-        orm_mode = True
-
-
-class TransactionBase(BaseModel):
-    journal_id: Optional[int]
-    chart_id: int
-    amount: float
-    particulars: Optional[str]
-    is_type: int
-
-
-class TransactionCreate(TransactionBase):
-    pass
-
-
-class Transaction(TransactionBase):
     id: int
 
     class Config:

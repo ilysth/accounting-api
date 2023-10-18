@@ -12,18 +12,17 @@ class ItemBase(BaseModel):
     default_coa: str
     nominated_supplier: str
     last_vendor: str
-    ave_cost = float
-    highest_price = float
-    lowest_price = float
-    is_vatable = boolean
-    is_deleted = boolean
-    added_by: str
+    ave_cost: float
+    highest_price: float
+    lowest_price: float
+    is_vatable: int
+    is_deleted: int
 
 
-class ItemCreate(FrameBase):
+class ItemCreate(ItemBase):
     pass
 
-class Item(FrameBase):
+class Item(ItemBase):
     id: int
     
     class Config:

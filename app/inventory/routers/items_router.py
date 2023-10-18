@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.accounting import crud, schemas
+from app.inventory import crud, schemas
 from app.database import DatabaseSessionMaker
 
 router = APIRouter(prefix="/items", tags=["Inventory Items"])

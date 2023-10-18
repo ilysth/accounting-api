@@ -10,13 +10,13 @@ def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
     charts_db = db.query(models.Frame)
 
     sortable_columns = {
-        "id": models.Frame.id,
+        "name": models.Frame.name,
     }
 
     sort = (
-        sortable_columns.get("id").asc()
+        sortable_columns.get("name").asc()
         if sort_direction == "desc"
-        else sortable_columns.get("id").desc()
+        else sortable_columns.get("name").desc()
     )
 
     filtered_result = charts_db.order_by(
@@ -52,8 +52,9 @@ def delete_frame(db: Session, id: int):
     chart = db.query(models.Chart).filter(models.Chart.frame_id == id).first()
 
     if chart is not None:
-        raise HTTPException(
-            status_code=404, detail="Cannot be deleted. Account Frames have sub-accounts in use.")
+        if chart.is_deleted == 0:
+            raise HTTPException(
+                status_code=404, detail="Cannot be deleted. Account Frames have sub-accounts in use.")
 
     db_frame = db.query(models.Frame).get(id)
 
@@ -75,13 +76,13 @@ def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
     charts_db = db.query(models.Chart)
 
     sortable_columns = {
-        "id": models.Chart.id,
+        "name": models.Chart.name,
     }
 
     sort = (
-        sortable_columns.get("id").asc()
+        sortable_columns.get("name").asc()
         if sort_direction == "desc"
-        else sortable_columns.get("id").desc()
+        else sortable_columns.get("name").desc()
     )
 
     filtered_result = charts_db.order_by(
@@ -200,8 +201,9 @@ def delete_company(db: Session, id: int):
         models.Department.company_id == id).first()
 
     if department is not None:
-        raise HTTPException(
-            status_code=404, detail="Cannot be deleted. Company have departments in use.")
+        if department.is_deleted == 0:
+            raise HTTPException(
+                status_code=404, detail="Cannot be deleted. Company have departments in use.")
 
     transaction = db.query(models.Transaction).filter(
         models.Journal.company_id == id).first()
@@ -286,14 +288,25 @@ def update_department(db: Session, id: int, department: schemas.DepartmentCreate
 
 
 def delete_department(db: Session, id: int):
+    transaction = db.query(models.Transaction).filter(
+        models.Journal.department_id == id).first()
+
+    if transaction is not None:
+        raise HTTPException(
+            status_code=404, detail="Cannot be deleted. Company have transaction/s.")
+
     db_dept = db.query(models.Department).get(id)
 
     if db_dept is None:
         raise HTTPException(status_code=404, detail="Department not found.")
 
     if db_dept is not None:
-        db.delete(db_dept)
+        db_dept.name = db_dept.name
+        db_dept.code = db_dept.code
+        db_dept.is_deleted = 1
+
         db.commit()
+        db.refresh(db_dept)
         return db_dept
 
 

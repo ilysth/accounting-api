@@ -481,10 +481,11 @@ def update_journal_and_transactions(
 
     transactions = []
     for data in journal.transactions:
-        # if "id" in data:
-        #     transaction = create_transaction(db, id, data)
-        # else:
-        transaction = update_transaction(db, data.id, data)
+        if data.id is not None:
+            transaction = update_transaction(db, data.id, data)
+        else:
+            transaction = create_transaction(db, id, data)
+
         transactions.append(transaction)
 
     db.add_all(transactions)

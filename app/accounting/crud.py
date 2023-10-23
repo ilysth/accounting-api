@@ -352,6 +352,7 @@ def update_transaction(db: Session, id: int, transaction: schemas.TransactionCre
         db_transaction.chart_id = transaction.chart_id
         db_transaction.amount = transaction.amount
         db_transaction.particulars = transaction.particulars
+        db_transaction.is_type = transaction.is_type
 
         db.commit()
         db.refresh(db_transaction)
@@ -397,10 +398,18 @@ def get_journals_by_id(db: Session, id: int):
 def get_all_journals_and_transactions(db: Session):
     journals = db.query(models.Journal).all()
 
+    sortable_columns = {
+        "is_type": models.Transaction.is_type,
+    }
+
+    sort = (
+        sortable_columns.get("is_type").asc()
+    )
+
     journal_list = []
     for journal in journals:
         transactions = db.query(models.Transaction).filter(
-            models.Transaction.journal_id == journal.id).all()
+            models.Transaction.journal_id == journal.id).order_by(sort).all()
 
         journal_data = {
             "id": journal.id,

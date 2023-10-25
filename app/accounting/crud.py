@@ -442,17 +442,21 @@ def create_journal(db: Session, journal: schemas.JournalCreate):
     if not company:
         raise HTTPException(status_code=404, detail="Company doesn't exist.")
 
-    department = db.query(models.Department).filter(
-        models.Department.id == journal.department_id).first()
-    if not department:
-        raise HTTPException(
-            status_code=404, detail="Department doesn't exist.")
+    department = None
+    if journal.department_id:
+        department = db.query(models.Department).filter(
+            models.Department.id == journal.department_id).first()
+        if not department:
+            raise HTTPException(
+                status_code=404, detail="Department doesn't exist.")
 
-    supplier = db.query(models.Supplier).filter(
-        models.Supplier.id == journal.supplier_id).first()
-    if not supplier:
-        raise HTTPException(
-            status_code=404, detail="Supplier doesn't exist.")
+    supplier = None  # Initialize supplier as None
+    if journal.supplier_id:
+        supplier = db.query(models.Supplier).filter(
+            models.Supplier.id == journal.supplier_id).first()
+        if not supplier:
+            raise HTTPException(
+                status_code=404, detail="Supplier doesn't exist.")
 
     journal_db = models.Journal(**journal.dict(exclude={"transactions"}))
     db.add(journal_db)

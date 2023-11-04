@@ -91,9 +91,19 @@ def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
     return filtered_result
 
 
-def get_charts_by_frame(db: Session, frame_id: int):
+def get_charts_by_frame(db: Session, frame_id: int, sort_direction: str = "desc"):
+    sortable_columns = {
+        "name": models.Chart.name,
+    }
+
+    sort = (
+        sortable_columns.get("name").asc()
+        if sort_direction == "desc"
+        else sortable_columns.get("name").desc()
+    )
+
     charts_db = db.query(models.Chart).filter(
-        models.Chart.frame_id == frame_id).all()
+        models.Chart.frame_id == frame_id).order_by(sort).all()
 
     return charts_db
 
@@ -159,13 +169,13 @@ def get_companies(db: Session, sort_direction: str = "desc", skip: int = 0, limi
     charts_db = db.query(models.Company)
 
     sortable_columns = {
-        "id": models.Company.id,
+        "code": models.Company.code,
     }
 
     sort = (
-        sortable_columns.get("id").asc()
+        sortable_columns.get("code").asc()
         if sort_direction == "desc"
-        else sortable_columns.get("id").desc()
+        else sortable_columns.get("code").desc()
     )
 
     filtered_result = charts_db.order_by(
@@ -231,13 +241,13 @@ def get_departments(db: Session, sort_direction: str = "desc", skip: int = 0, li
     charts_db = db.query(models.Department)
 
     sortable_columns = {
-        "id": models.Department.id,
+        "code": models.Department.code,
     }
 
     sort = (
-        sortable_columns.get("id").asc()
+        sortable_columns.get("code").asc()
         if sort_direction == "desc"
-        else sortable_columns.get("id").desc()
+        else sortable_columns.get("code").desc()
     )
 
     filtered_result = charts_db.order_by(
@@ -437,12 +447,18 @@ def get_all_journals_and_transactions(db: Session):
 
 
 def create_journal(db: Session, journal: schemas.JournalCreate):
+    reference_no = db.query(models.Journal).filter(
+        models.Journal.reference_no == journal.reference_no).first()
+    if reference_no:
+        raise HTTPException(
+            status_code=404, detail="Reference No. already exist.")
+
     company = db.query(models.Company).filter(
         models.Company.id == journal.company_id).first()
     if not company:
-        raise HTTPException(status_code=404, detail="Company doesn't exist.")
+        raise HTTPException(
+            status_code=404, detail="Company doesn't exist.")
 
-    department = None
     if journal.department_id:
         department = db.query(models.Department).filter(
             models.Department.id == journal.department_id).first()
@@ -450,7 +466,6 @@ def create_journal(db: Session, journal: schemas.JournalCreate):
             raise HTTPException(
                 status_code=404, detail="Department doesn't exist.")
 
-    supplier = None  # Initialize supplier as None
     if journal.supplier_id:
         supplier = db.query(models.Supplier).filter(
             models.Supplier.id == journal.supplier_id).first()
@@ -494,9 +509,15 @@ def update_journal_and_transactions(
 
     transactions = []
     for data in journal.transactions:
-        if data.id is not None:
+        if data.id:
             transaction = update_transaction(db, data.id, data)
         else:
+            transactions_db = db.query(models.Transaction).filter(
+                models.Transaction.journal_id == id).all()
+
+            if transactions_db:
+                delete_transactions_by_journal_id(db=db, id=id)
+
             transaction = create_transaction(db, id, data)
 
         transactions.append(transaction)
@@ -518,21 +539,21 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
     if not company:
         raise HTTPException(status_code=404, detail="Company doesn't exist.")
 
-    if journal.department_id is not None:
+    if journal.department_id:
         department = db.query(models.Department).filter(
             models.Department.id == journal.department_id).first()
         if not department:
             raise HTTPException(
                 status_code=404, detail="Department doesn't exist.")
 
-    if journal.supplier_id is not None:
+    if journal.supplier_id:
         supplier = db.query(models.Supplier).filter(
             models.Supplier.id == journal.supplier_id).first()
         if not supplier:
             raise HTTPException(
                 status_code=404, detail="Supplier doesn't exist.")
 
-    if journal_db is not None:
+    if journal_db:
         journal_db.supplier_id = journal.supplier_id
         journal_db.company_id = journal.company_id
         journal_db.department_id = journal.department_id
@@ -544,6 +565,20 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
         db.commit()
         db.refresh(journal_db)
         return journal_db
+
+
+def delete_transactions_by_journal_id(db: Session, id: int):
+    transactions_db = db.query(models.Transaction).filter(
+        models.Transaction.journal_id == id).all()
+
+    if transactions_db is None:
+        raise HTTPException(status_code=404, detail="No transaction found.")
+
+    if transactions_db:
+        for transaction in transactions_db:
+            db.delete(transaction)
+
+        db.commit()
 
 
 def delete_journal(db: Session, id: int):
@@ -645,6 +680,28 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
 #         filtered_result = [result for result in filtered_result if result.supplier_id == supplier_id]
 
 #     return filtered_result
+
+
+def insert_journal_from_csv(db: Session, csv_journal: schemas.JournalCreate):
+    journal = (
+        db.query(models.Journal)
+        .filter(models.Journal.reference_no == csv_journal.reference_no)
+        .first()
+    )
+
+    if journal:
+        db_journal = update_journal_and_transactions(
+            db=db, id=journal.id, journal=csv_journal)
+    else:
+        db_journal = create_journal_and_transactions(
+            db=db, journal=csv_journal)
+
+    return db_journal
+
+
+def import_journals(db: Session, csv_journals: list[schemas.JournalCreate]):
+    for journal in csv_journals:
+        insert_journal_from_csv(db=db, csv_journal=journal)
 
 # def import_journal_from_csv(db: Session, csv_journal: schemas.JournalCreate):
 #     new_journal = models.Journal(

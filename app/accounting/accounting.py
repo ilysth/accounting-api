@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from app.accounting.routers import account_frame_router, chart_of_accounts_router, transaction_router, companies_router, department_router, journal_entry_router, supplier_router
 from app.database import DatabaseSessionMaker
 
-app = FastAPI(title="APP Features", description="App Integration Resources")
+app = FastAPI(
+    title="Shydan's Accounting", description="API for all things related to accounting."
+)
 
 get_db = DatabaseSessionMaker("shydans_db")
 

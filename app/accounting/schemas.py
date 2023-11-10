@@ -76,7 +76,7 @@ class Department(DepartmentBase):
 
 
 class TransactionBase(BaseModel):
-    id: int
+    id: Optional[int]
     journal_id: Optional[int]
     chart_id: int
     amount: float

@@ -54,7 +54,7 @@ async def update_journal(journal: schemas.JournalCreate, id: int, db: Session = 
 
 
 @router.delete("/{id}/", response_model=schemas.Journal)
-async def delete_transaction(id: int, db: Session = Depends(get_db)):
+async def delete_journal(id: int, db: Session = Depends(get_db)):
     """ Remove Journal Entry """
     return crud.delete_journal(db=db, id=id)
 
@@ -119,11 +119,19 @@ async def delete_transaction(id: int, db: Session = Depends(get_db)):
 #         if from_date and to_date is None:
 #             raise HTTPException(status_code=404, detail="from_date or to_date should not be empty.")
 
+
+@router.post("/import-journals", status_code=status.HTTP_201_CREATED)
+async def import_journals(
+    csv_journals: list[schemas.JournalCreate], db: Session = Depends(get_db)
+):
+    return crud.import_journals(db=db, csv_journals=csv_journals)
+
 # @router.post("/import-journal", status_code=status.HTTP_201_CREATED)
 # async def import_journals(
 #     csv_journal: list[schemas.JournalCreate], db: Session = Depends(get_db)
-# # ):
-# #     return crud.import_journals(db=db, csv_journal=csv_journal)
+# ):
+#     return crud.import_journal_from_csv(db=db, csv_journal=csv_journal)
+
 
 # @router.post("/import-journal", status_code=status.HTTP_201_CREATED)
 # async def import_journals(

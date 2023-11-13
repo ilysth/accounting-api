@@ -15,27 +15,26 @@ from sqlalchemy.orm import object_session, relationship
 
 from app.crm import enums, schemas
 from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from app.base import Base
 
 contact_relationships = Table(
-    "employee_employer_relationships",
+    "crm_employee_employer_relationships",
     Base.metadata,
-    Column("empr_id", ForeignKey("contacts.id")),
-    Column("empe_id", ForeignKey("contacts.id")),
+    Column("empr_id", ForeignKey("crm_contacts.id")),
+    Column("empe_id", ForeignKey("crm_contacts.id")),
 )
 
 
 contact_trades = Table(
-    "graph_companies_trades_edges",
+    "crm_graph_companies_trades_edges",
     Base.metadata,
-    Column("company_id", ForeignKey("contacts.id")),
-    Column("trade_type_id", ForeignKey("company_trade_types.id")),
+    Column("company_id", ForeignKey("crm_contacts.id")),
+    Column("trade_type_id", ForeignKey("crm_company_trade_types.id")),
 )
 
 
 class Contact(Base):
-    __tablename__ = "contacts"
+    __tablename__ = "crm_contacts"
 
     id = Column(Integer, primary_key=True, index=True)
     contact_type = Column(Enum(enums.ContactTypes))
@@ -59,13 +58,16 @@ class Contact(Base):
     is_supplier = Column(Integer, default=0)
     discount = Column(Numeric, nullable=True)
     payment_terms = Column(Integer, ForeignKey(
-        "payment_terms.id"), nullable=True)
+        "crm_payment_terms.id"), nullable=True)
     payment_status = Column(Enum(enums.PaymentStatuses), nullable=True)
-    company_id = Column(Integer, ForeignKey("contacts.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("crm_contacts.id"), nullable=True)
 
     attached_files = relationship(
         "AttachedFile", backref="contacts", cascade="all, delete-orphan"
     )
+
+    journal = relationship("accounting.models.Journal",
+                           backref="crm_contacts.id")
 
     trades = relationship("TradeType", secondary=contact_trades)
 
@@ -83,7 +85,7 @@ class Contact(Base):
 
 
 class PaymentTerm(Base):
-    __tablename__ = "payment_terms"
+    __tablename__ = "crm_payment_terms"
 
     id = Column(Integer, primary_key=True, index=True)
     country_id = Column(Integer, nullable=True, default=0)
@@ -95,18 +97,18 @@ class PaymentTerm(Base):
 
 
 class AttachedFile(Base):
-    __tablename__ = "attached_files"
+    __tablename__ = "crm_attached_files"
 
     id = Column(Integer, primary_key=True, index=True)
     file_name = Column(String(250))
     subject = Column(String(100))
     date_uploaded = Column(DateTime)
     dl_file = Column(String(250))
-    contact_id = Column(Integer, ForeignKey("contacts.id"))
+    contact_id = Column(Integer, ForeignKey("crm_contacts.id"))
 
 
 class TradeType(Base):
-    __tablename__ = "company_trade_types"
+    __tablename__ = "crm_company_trade_types"
 
     id = Column(Integer, primary_key=True, index=True)
     abbr = Column(String(9))
@@ -114,13 +116,13 @@ class TradeType(Base):
 
 
 class ShopAccount(Base):
-    __tablename__ = "shop_accounts"
+    __tablename__ = "crm_shop_accounts"
 
     id = Column(Integer, primary_key=True)
     username = Column(String(100))
     password = Column(String(100))
     user_id = Column(Integer)
-    contact_id = Column(Integer, ForeignKey("contacts.id"))
+    contact_id = Column(Integer, ForeignKey("crm_contacts.id"))
     shop_url = Column(String(2048))
     is_global = Column(Boolean)
 
@@ -128,10 +130,10 @@ class ShopAccount(Base):
 
 
 class Address(Base):
-    __tablename__ = "addresses"
+    __tablename__ = "crm_addresses"
 
     id = Column(Integer, primary_key=True)
-    contact_id = Column(Integer, ForeignKey("contacts.id"))
+    contact_id = Column(Integer, ForeignKey("crm_contacts.id"))
     country = Column(String(255))
     country_native_name = Column(String(255))
     country_code = Column(String(255))
@@ -156,9 +158,10 @@ class Address(Base):
 
 
 class CountryTranslation(Base):
-    __tablename__ = "country_translations"
+    __tablename__ = "crm_country_translations"
 
     id = Column(Integer, primary_key=True)
-    country_code = Column(String(255), ForeignKey("addresses.country_code"))
+    country_code = Column(String(255), ForeignKey(
+        "crm_addresses.country_code"))
     locale = Column(String(255))
     value = Column(String(255))

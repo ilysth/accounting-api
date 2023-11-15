@@ -25,6 +25,12 @@ def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
 
 
 def create_frame(db: Session, frame: schemas.FrameCreate):
+    code = db.query(models.Frame).filter(
+        models.Frame.code == frame.code, models.Frame.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
+
     db_frame = models.Frame(**frame.dict())
     db.add(db_frame)
     db.commit()
@@ -52,9 +58,11 @@ def delete_frame(db: Session, id: int):
     chart = db.query(models.Chart).filter(models.Chart.frame_id == id).first()
 
     if chart is not None:
-        if chart.is_deleted == 0:
+        journals = db.query(models.Journal).filter(
+            models.Journal.department_id == id).first()
+        if journals:
             raise HTTPException(
-                status_code=404, detail="Cannot be deleted. Account Frames have sub-accounts in use.")
+                status_code=404, detail="Cannot be deleted. Company have departments in use.")
 
     db_frame = db.query(models.Frame).get(id)
 
@@ -115,6 +123,12 @@ def create_chart(db: Session, chart: schemas.ChartCreate):
     if not frame:
         raise HTTPException(
             status_code=404, detail="Account Frame does not exist.")
+
+    code = db.query(models.Chart).filter(
+        models.Chart.frame_id == chart.frame_id, models.Chart.code == chart.code, models.Chart.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
 
     db_chart = models.Chart(**chart.dict())
     db.add(db_chart)
@@ -184,6 +198,12 @@ def get_companies(db: Session, sort_direction: str = "desc", skip: int = 0, limi
 
 
 def create_company(db: Session, company: schemas.CompanyCreate):
+    code = db.query(models.Company).filter(
+        models.Company.code == company.code, models.Company.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
+
     db_company = models.Company(**company.dict())
     db.add(db_company)
     db.commit()
@@ -211,7 +231,9 @@ def delete_company(db: Session, id: int):
         models.Department.company_id == id).first()
 
     if department is not None:
-        if department.is_deleted == 0:
+        journals = db.query(models.Journal).filter(
+            models.Journal.department_id == id).first()
+        if journals:
             raise HTTPException(
                 status_code=404, detail="Cannot be deleted. Company have departments in use.")
 
@@ -268,6 +290,12 @@ def create_department(db: Session, department: schemas.DepartmentCreate):
 
     if not company:
         raise HTTPException(status_code=404, detail="Company dont exist.")
+
+    code = db.query(models.Department).filter(
+        models.Department.company_id == department.company_id, models.Department.code == department.code, models.Department.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
 
     db_dept = models.Department(**department.dict())
     db.add(db_dept)

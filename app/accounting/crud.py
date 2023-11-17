@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload
 
 
 def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
-    charts_db = db.query(models.Frame)
+    frame_db = db.query(models.Frame)
 
     sortable_columns = {
         "name": models.Frame.name,
@@ -19,7 +19,7 @@ def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
         else sortable_columns.get("name").desc()
     )
 
-    filtered_result = charts_db.order_by(
+    filtered_result = frame_db.order_by(
         sort).offset(skip).limit(limit).all()
     return filtered_result
 
@@ -80,7 +80,7 @@ def delete_frame(db: Session, id: int):
         return db_frame
 
 
-def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 500):
     charts_db = db.query(models.Chart)
 
     sortable_columns = {
@@ -95,7 +95,6 @@ def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
 
     filtered_result = charts_db.order_by(
         sort).offset(skip).limit(limit).all()
-
     return filtered_result
 
 

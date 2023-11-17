@@ -1,9 +1,8 @@
 import datetime
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Float
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+# from app.crm.models import Contact
+from app.base import Base
 
 
 class Frame(Base):
@@ -36,24 +35,24 @@ class Chart(Base):
         "Transaction", back_populates="chart", cascade="all, delete-orphan")
 
 
-class Supplier(Base):
-    __tablename__ = "accounting_supplier"
+# class Supplier(Base):
+#     __tablename__ = "accounting_supplier"
 
-    id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String(255))
-    last_name = Column(String(255))
-    business_type = Column(String(255), nullable=True)
-    email = Column(String(255), nullable=True)
-    contact_number = Column(String(255), nullable=True)
-    tel_number = Column(String(255), nullable=True)
-    address = Column(String(255), nullable=True)
-    tin = Column(String(255), nullable=True)
-    sec = Column(String(255), nullable=True)
-    dti = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.now)
+#     id = Column(Integer, primary_key=True, index=True)
+#     first_name = Column(String(255))
+#     last_name = Column(String(255))
+#     business_type = Column(String(255), nullable=True)
+#     email = Column(String(255), nullable=True)
+#     contact_number = Column(String(255), nullable=True)
+#     tel_number = Column(String(255), nullable=True)
+#     address = Column(String(255), nullable=True)
+#     tin = Column(String(255), nullable=True)
+#     sec = Column(String(255), nullable=True)
+#     dti = Column(String(255), nullable=True)
+#     created_at = Column(DateTime, default=datetime.datetime.now)
 
-    journal = relationship(
-        "Journal", back_populates="supplier", cascade="all, delete-orphan")
+#     journal = relationship(
+#         "Journal", back_populates="supplier", cascade="all, delete-orphan")
 
 
 class Company(Base):
@@ -95,7 +94,7 @@ class Journal(Base):
     department_id = Column(Integer, ForeignKey(
         "accounting_department.id"), nullable=True)
     supplier_id = Column(Integer, ForeignKey(
-        "accounting_supplier.id"), nullable=True)
+        "crm_contacts.id"), nullable=True)
     reference_no = Column(String(255), nullable=True)
     date = Column(DateTime, nullable=True)
     notes = Column(String(255), nullable=True)
@@ -105,7 +104,8 @@ class Journal(Base):
     transaction = relationship(
         "Transaction", back_populates="journal", cascade="all, delete-orphan")
     company = relationship("Company", back_populates="journal")
-    supplier = relationship("Supplier", back_populates="journal")
+    supplier = relationship("app.crm.models.Contact",
+                            foreign_keys=[supplier_id])
 
 
 class Transaction(Base):

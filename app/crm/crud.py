@@ -133,25 +133,25 @@ def update_person_photo(db: Session, contact_id: int, img: str):
 
 
 async def delete_contact(db: Session, contact_id: int):
-    try:
-        sales_db_generator = deps.get_db()
-        sales_db: Session = next(sales_db_generator)
-        transactions = sales_crud.get_transactions_by_customer_id(
-            sales_db, contact_id)
-        if len(transactions) > 0:
-            raise IntegrityError(None, None, None)
+    # try:
+    #     sales_db_generator = deps.get_db()
+    #     sales_db: Session = next(sales_db_generator)
+    #     transactions = sales_crud.get_transactions_by_customer_id(
+    #         sales_db, contact_id)
+    #     if len(transactions) > 0:
+    #         raise IntegrityError(None, None, None)
 
-        db_item = get_contact(db, contact_id)
+    db_item = get_contact(db, contact_id)
 
-        if db_item is None:
-            return None
+    if db_item is None:
+        return None
 
-        db.delete(db_item)
-        db.commit()
+    db.delete(db_item)
+    db.commit()
 
-        return contact_id
-    except IntegrityError:
-        raise HTTPException(status_code=405, detail="Dependency error occurs")
+    return contact_id
+    # except IntegrityError:
+    #     raise HTTPException(status_code=405, detail="Dependency error occurs")
 
 
 def get_companies(db: Session, country_id: int, skip: int = 0, limit: int = 100):

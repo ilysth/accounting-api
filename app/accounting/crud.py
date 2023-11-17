@@ -25,6 +25,12 @@ def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
 
 
 def create_frame(db: Session, frame: schemas.FrameCreate):
+    code = db.query(models.Frame).filter(
+        models.Frame.code == frame.code, models.Frame.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
+
     db_frame = models.Frame(**frame.dict())
     db.add(db_frame)
     db.commit()
@@ -52,9 +58,11 @@ def delete_frame(db: Session, id: int):
     chart = db.query(models.Chart).filter(models.Chart.frame_id == id).first()
 
     if chart is not None:
-        if chart.is_deleted == 0:
+        journals = db.query(models.Journal).filter(
+            models.Journal.department_id == id).first()
+        if journals:
             raise HTTPException(
-                status_code=404, detail="Cannot be deleted. Account Frames have sub-accounts in use.")
+                status_code=404, detail="Cannot be deleted. Company have departments in use.")
 
     db_frame = db.query(models.Frame).get(id)
 
@@ -115,6 +123,12 @@ def create_chart(db: Session, chart: schemas.ChartCreate):
     if not frame:
         raise HTTPException(
             status_code=404, detail="Account Frame does not exist.")
+
+    code = db.query(models.Chart).filter(
+        models.Chart.frame_id == chart.frame_id, models.Chart.code == chart.code, models.Chart.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
 
     db_chart = models.Chart(**chart.dict())
     db.add(db_chart)
@@ -184,6 +198,12 @@ def get_companies(db: Session, sort_direction: str = "desc", skip: int = 0, limi
 
 
 def create_company(db: Session, company: schemas.CompanyCreate):
+    code = db.query(models.Company).filter(
+        models.Company.code == company.code, models.Company.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
+
     db_company = models.Company(**company.dict())
     db.add(db_company)
     db.commit()
@@ -211,7 +231,9 @@ def delete_company(db: Session, id: int):
         models.Department.company_id == id).first()
 
     if department is not None:
-        if department.is_deleted == 0:
+        journals = db.query(models.Journal).filter(
+            models.Journal.department_id == id).first()
+        if journals:
             raise HTTPException(
                 status_code=404, detail="Cannot be deleted. Company have departments in use.")
 
@@ -268,6 +290,12 @@ def create_department(db: Session, department: schemas.DepartmentCreate):
 
     if not company:
         raise HTTPException(status_code=404, detail="Company dont exist.")
+
+    code = db.query(models.Department).filter(
+        models.Department.company_id == department.company_id, models.Department.code == department.code, models.Department.is_deleted == 0).first()
+    if code:
+        raise HTTPException(
+            status_code=404, detail="Code already exist.")
 
     db_dept = models.Department(**department.dict())
     db.add(db_dept)
@@ -466,12 +494,12 @@ def create_journal(db: Session, journal: schemas.JournalCreate):
             raise HTTPException(
                 status_code=404, detail="Department doesn't exist.")
 
-    if journal.supplier_id:
-        supplier = db.query(models.Supplier).filter(
-            models.Supplier.id == journal.supplier_id).first()
-        if not supplier:
-            raise HTTPException(
-                status_code=404, detail="Supplier doesn't exist.")
+    # if journal.supplier_id:
+    #     supplier = db.query(models.Contact).filter(
+    #         models.Contact.id == journal.supplier_id).first()
+    #     if not supplier:
+    #         raise HTTPException(
+    #             status_code=404, detail="Supplier doesn't exist.")
 
     journal_db = models.Journal(**journal.dict(exclude={"transactions"}))
     db.add(journal_db)
@@ -546,12 +574,12 @@ def update_journal(db: Session, id: int, journal: schemas.JournalCreate):
             raise HTTPException(
                 status_code=404, detail="Department doesn't exist.")
 
-    if journal.supplier_id:
-        supplier = db.query(models.Supplier).filter(
-            models.Supplier.id == journal.supplier_id).first()
-        if not supplier:
-            raise HTTPException(
-                status_code=404, detail="Supplier doesn't exist.")
+    # if journal.supplier_id:
+    #     supplier = db.query(models.Supplier).filter(
+    #         models.Supplier.id == journal.supplier_id).first()
+    #     if not supplier:
+    #         raise HTTPException(
+    #             status_code=404, detail="Supplier doesn't exist.")
 
     if journal_db:
         journal_db.supplier_id = journal.supplier_id
@@ -764,65 +792,65 @@ def import_journals(db: Session, csv_journals: list[schemas.JournalCreate]):
 #         return db_journal
 
 
-def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
-    supplier_db = db.query(models.Supplier)
+# def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+#     supplier_db = db.query(models.Supplier)
 
-    sortable_columns = {
-        "id": models.Supplier.id,
-    }
+#     sortable_columns = {
+#         "id": models.Supplier.id,
+#     }
 
-    sort = (
-        sortable_columns.get("id").asc()
-        if sort_direction == "desc"
-        else sortable_columns.get("id").desc()
-    )
+#     sort = (
+#         sortable_columns.get("id").asc()
+#         if sort_direction == "desc"
+#         else sortable_columns.get("id").desc()
+#     )
 
-    filtered_result = supplier_db.order_by(
-        sort).offset(skip).limit(limit).all()
-    return filtered_result
-
-
-def create_supplier(db: Session, supplier: schemas.SupplierCreate):
-    db_supplier = models.Supplier(**supplier .dict())
-    db.add(db_supplier)
-    db.commit()
-    db.refresh(db_supplier)
-    return db_supplier
+#     filtered_result = supplier_db.order_by(
+#         sort).offset(skip).limit(limit).all()
+#     return filtered_result
 
 
-def update_supplier(db: Session, id: int, supplier: schemas.SupplierCreate):
-    db_supplier = db.query(models.Supplier).get(id)
-
-    if db_supplier is None:
-        raise HTTPException(status_code=404, detail="Supplier not found.")
-
-    if db_supplier is not None:
-        db_supplier.business_type = supplier.business_type
-        db_supplier.first_name = supplier.first_name
-        db_supplier.last_name = supplier.last_name
-        db_supplier.email = supplier.email
-        db_supplier.contact_number = supplier.contact_number
-        db_supplier.tel_number = supplier.tel_number
-        db_supplier.address = supplier.address
-        db_supplier.tin = supplier.tin
-        db_supplier.sec_registration = supplier.sec
-        db_supplier.dti_registration = supplier.dti
-
-        db.commit()
-        db.refresh(db_supplier)
-        return db_supplier
+# def create_supplier(db: Session, supplier: schemas.SupplierCreate):
+#     db_supplier = models.Supplier(**supplier .dict())
+#     db.add(db_supplier)
+#     db.commit()
+#     db.refresh(db_supplier)
+#     return db_supplier
 
 
-def delete_supplier(db: Session, id: int):
-    db_supplier = db.query(models.Supplier).get(id)
+# def update_supplier(db: Session, id: int, supplier: schemas.SupplierCreate):
+#     db_supplier = db.query(models.Supplier).get(id)
 
-    if db_supplier is None:
-        raise HTTPException(status_code=404, detail="Supplier not found.")
+#     if db_supplier is None:
+#         raise HTTPException(status_code=404, detail="Supplier not found.")
 
-    if db_supplier is not None:
-        db.delete(db_supplier)
-        db.commit()
-        return db_supplier
+#     if db_supplier is not None:
+#         db_supplier.business_type = supplier.business_type
+#         db_supplier.first_name = supplier.first_name
+#         db_supplier.last_name = supplier.last_name
+#         db_supplier.email = supplier.email
+#         db_supplier.contact_number = supplier.contact_number
+#         db_supplier.tel_number = supplier.tel_number
+#         db_supplier.address = supplier.address
+#         db_supplier.tin = supplier.tin
+#         db_supplier.sec_registration = supplier.sec
+#         db_supplier.dti_registration = supplier.dti
+
+#         db.commit()
+#         db.refresh(db_supplier)
+#         return db_supplier
+
+
+# def delete_supplier(db: Session, id: int):
+#     db_supplier = db.query(models.Supplier).get(id)
+
+#     if db_supplier is None:
+#         raise HTTPException(status_code=404, detail="Supplier not found.")
+
+#     if db_supplier is not None:
+#         db.delete(db_supplier)
+#         db.commit()
+#         return db_supplier
 
 # def get_latest_debit_balance(db: Session):
 #     balance_debit_db = db.query(models.Debit).order_by(models.Debit.created_at.desc()).first()

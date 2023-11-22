@@ -226,22 +226,25 @@ def update_company(db: Session, id: int, company: schemas.CompanyCreate):
 
 
 def delete_company(db: Session, id: int):
-    department = db.query(models.Department).filter(
-        models.Department.company_id == id).first()
-
-    if department is not None:
-        journals = db.query(models.Journal).filter(
-            models.Journal.department_id == id).first()
-        if journals:
-            raise HTTPException(
-                status_code=404, detail="Cannot be deleted. Company have departments in use.")
-
     transaction = db.query(models.Transaction).filter(
         models.Journal.company_id == id).first()
 
     if transaction is not None:
         raise HTTPException(
             status_code=404, detail="Cannot be deleted. Company have transaction/s.")
+
+    departments = db.query(models.Department).filter(
+        models.Department.company_id == id).all()
+
+    if departments is not None:
+        journals = db.query(models.Journal).filter(
+            models.Journal.department_id == id).first()
+        if journals:
+            raise HTTPException(
+                status_code=404, detail="Cannot be deleted. Company have departments in use.")
+        else:
+            for dept in departments:
+                delete_department(db=db, id=dept.id)
 
     db_company = db.query(models.Company).get(id)
 
@@ -330,7 +333,7 @@ def delete_department(db: Session, id: int):
 
     if transaction is not None:
         raise HTTPException(
-            status_code=404, detail="Cannot be deleted. Company have transaction/s.")
+            status_code=404, detail="Cannot be deleted. Department have transaction/s.")
 
     db_dept = db.query(models.Department).get(id)
 

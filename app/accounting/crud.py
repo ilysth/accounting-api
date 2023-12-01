@@ -58,11 +58,17 @@ def delete_frame(db: Session, id: int):
     chart = db.query(models.Chart).filter(models.Chart.frame_id == id).first()
 
     if chart is not None:
-        journals = db.query(models.Journal).filter(
-            models.Journal.department_id == id).first()
-        if journals:
+        transactions = db.query(models.Transaction).filter(
+            models.Transaction.chart_id == chart.id).first()
+        if transactions:
             raise HTTPException(
-                status_code=404, detail="Cannot be deleted. Company have departments in use.")
+                status_code=404, detail="Cannot be deleted. Frame have chart/s in use.")
+        else:
+            charts = db.query(models.Chart).filter(
+                models.Chart.frame_id == id).all()
+
+            for cht in charts:
+                delete_chart(db=db, id=cht.id)
 
     db_frame = db.query(models.Frame).get(id)
 
@@ -602,6 +608,7 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
         "report_type": frame.report_type,
         "code": frame.code,
         "created_at": frame.created_at,
+        "is_deleted": frame.is_deleted,
         "parent_id": 0,
         "sub_accounts": [{
             "id": chart.id,

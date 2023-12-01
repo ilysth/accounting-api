@@ -70,7 +70,7 @@ def create_person(db: Session, person: schemas.Person):
     if person.company_id != person.id:
         db_item.company_id = person.company_id
 
-        next_db = next(crm.get_db())
+        next_db = crm.get_db()
         create_relationship(next_db, person.company_id, person.id)
 
     update_company_trade_types(db, db_item.id, person.trades)
@@ -189,7 +189,7 @@ def create_company(db: Session, company: schemas.Company):
     if company.company_id != company.id:
         db_item.company_id = company.company_id
 
-        next_db = next(crm.get_db())
+        next_db = crm.get_db()
         create_relationship(next_db, company.company_id, company.id)
 
     update_company_trade_types(db, db_item.id, company.trades)
@@ -512,7 +512,7 @@ def update_note(
 
 def create_relationship(db: Session, empr_id: int, empe_id: int):
     try:
-        sql = "INSERT INTO employee_employer_relationships VALUES (:empr_id, :empe_id)"
+        sql = "INSERT INTO crm_employee_employer_relationships VALUES (:empr_id, :empe_id)"
         db.execute(text(sql), {"empr_id": empr_id, "empe_id": empe_id})
         db.commit()
     except IntegrityError:
@@ -530,7 +530,7 @@ def get_relationship_employees(db: Session, empr_id: int):
 
 
 def delete_relationship(db: Session, empr_id: int, empe_id: int):
-    sql = "DELETE FROM employee_employer_relationships WHERE empr_id= :empr_id AND empe_id= :empe_id"
+    sql = "DELETE FROM crm_employee_employer_relationships WHERE empr_id= :empr_id AND empe_id= :empe_id"
     db.execute(text(sql), {"empr_id": empr_id, "empe_id": empe_id})
     db.commit()
 

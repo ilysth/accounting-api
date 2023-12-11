@@ -512,20 +512,27 @@ def update_journal_and_transactions(
     journal_db = update_journal(db, id, journal=journal)
     db.add(journal_db)
 
+    existing_transactions = db.query(models.Transaction).filter(
+        models.Transaction.journal_id == id).all()
+
     transactions = []
     for data in journal.transactions:
         if data.id:
             transaction = update_transaction(db, data.id, data)
         else:
-            transactions_db = db.query(models.Transaction).filter(
-                models.Transaction.journal_id == id).all()
+            # transactions_db = db.query(models.Transaction).filter(
+            #     models.Transaction.journal_id == id).all()
 
-            if transactions_db:
-                delete_transactions_by_journal_id(db=db, id=id)
+            # if transactions_db:
+            #     delete_transactions_by_journal_id(db=db, id=id)
 
             transaction = create_transaction(db, id, data)
 
         transactions.append(transaction)
+
+    for existing_transaction in existing_transactions:
+        if existing_transaction.id not in [data.id for data in journal.transactions]:
+            db.delete(existing_transaction)
 
     db.add_all(transactions)
     db.commit()

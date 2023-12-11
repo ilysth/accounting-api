@@ -104,7 +104,7 @@ def update_person(db: Session, contact_id: int, person: schemas.Person):
     if person.company_id != contact_id:
         db_item.company_id = person.company_id
 
-        next_db = next(crm.get_db())
+        next_db = crm.get_db()
         create_relationship(next_db, person.company_id, contact_id)
 
     db.query(models.Address).filter(

@@ -9,7 +9,7 @@ get_db = DatabaseSessionMaker("shydans_db")
 
 
 @router.get("/")
-async def read_charts(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+async def read_charts(db: Session = Depends(get_db), sort_direction: str = "desc", skip: int = 0, limit: int = 500):
     """ List Chart of Accounts. """
     return crud.get_charts(db=db, sort_direction=sort_direction, skip=skip, limit=limit)
 

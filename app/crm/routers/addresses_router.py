@@ -1,12 +1,16 @@
+import os
+import requests
+
+from dotenv import load_dotenv
 from functools import cache
 from fastapi import APIRouter
-from dotenv import dotenv_values
-import requests
+from pathlib import Path
 
 router = APIRouter(prefix="/addresses", tags=["Addresses Resources"])
 
-config = dotenv_values("env/.env")
-api_key = config["MAPS_API_KEY"]
+dotenv_path = Path("env/.env")
+load_dotenv(dotenv_path=dotenv_path)
+api_key = os.getenv("MAPS_API_KEY")
 
 
 @router.get("/autocomplete")

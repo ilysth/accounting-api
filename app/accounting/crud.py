@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload
 
 
 def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
-    charts_db = db.query(models.Frame)
+    frame_db = db.query(models.Frame)
 
     sortable_columns = {
         "name": models.Frame.name,
@@ -19,7 +19,7 @@ def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
         else sortable_columns.get("name").desc()
     )
 
-    filtered_result = charts_db.order_by(
+    filtered_result = frame_db.order_by(
         sort).offset(skip).limit(limit).all()
     return filtered_result
 
@@ -58,11 +58,17 @@ def delete_frame(db: Session, id: int):
     chart = db.query(models.Chart).filter(models.Chart.frame_id == id).first()
 
     if chart is not None:
-        journals = db.query(models.Journal).filter(
-            models.Journal.department_id == id).first()
-        if journals:
+        transactions = db.query(models.Transaction).filter(
+            models.Transaction.chart_id == chart.id).first()
+        if transactions:
             raise HTTPException(
-                status_code=404, detail="Cannot be deleted. Company have departments in use.")
+                status_code=404, detail="Cannot be deleted. Frame have chart/s in use.")
+        else:
+            charts = db.query(models.Chart).filter(
+                models.Chart.frame_id == id).all()
+
+            for cht in charts:
+                delete_chart(db=db, id=cht.id)
 
     db_frame = db.query(models.Frame).get(id)
 
@@ -80,7 +86,7 @@ def delete_frame(db: Session, id: int):
         return db_frame
 
 
-def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
+def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 500):
     charts_db = db.query(models.Chart)
 
     sortable_columns = {
@@ -95,7 +101,6 @@ def get_charts(db: Session, sort_direction: str = "desc", skip: int = 0, limit: 
 
     filtered_result = charts_db.order_by(
         sort).offset(skip).limit(limit).all()
-
     return filtered_result
 
 
@@ -227,22 +232,25 @@ def update_company(db: Session, id: int, company: schemas.CompanyCreate):
 
 
 def delete_company(db: Session, id: int):
-    department = db.query(models.Department).filter(
-        models.Department.company_id == id).first()
-
-    if department is not None:
-        journals = db.query(models.Journal).filter(
-            models.Journal.department_id == id).first()
-        if journals:
-            raise HTTPException(
-                status_code=404, detail="Cannot be deleted. Company have departments in use.")
-
     transaction = db.query(models.Transaction).filter(
         models.Journal.company_id == id).first()
 
     if transaction is not None:
         raise HTTPException(
             status_code=404, detail="Cannot be deleted. Company have transaction/s.")
+
+    departments = db.query(models.Department).filter(
+        models.Department.company_id == id).all()
+
+    if departments is not None:
+        journals = db.query(models.Journal).filter(
+            models.Journal.department_id == id).first()
+        if journals:
+            raise HTTPException(
+                status_code=404, detail="Cannot be deleted. Company have departments in use.")
+        else:
+            for dept in departments:
+                delete_department(db=db, id=dept.id)
 
     db_company = db.query(models.Company).get(id)
 
@@ -331,7 +339,7 @@ def delete_department(db: Session, id: int):
 
     if transaction is not None:
         raise HTTPException(
-            status_code=404, detail="Cannot be deleted. Company have transaction/s.")
+            status_code=404, detail="Cannot be deleted. Department have transaction/s.")
 
     db_dept = db.query(models.Department).get(id)
 
@@ -504,20 +512,27 @@ def update_journal_and_transactions(
     journal_db = update_journal(db, id, journal=journal)
     db.add(journal_db)
 
+    existing_transactions = db.query(models.Transaction).filter(
+        models.Transaction.journal_id == id).all()
+
     transactions = []
     for data in journal.transactions:
         if data.id:
             transaction = update_transaction(db, data.id, data)
         else:
-            transactions_db = db.query(models.Transaction).filter(
-                models.Transaction.journal_id == id).all()
+            # transactions_db = db.query(models.Transaction).filter(
+            #     models.Transaction.journal_id == id).all()
 
-            if transactions_db:
-                delete_transactions_by_journal_id(db=db, id=id)
+            # if transactions_db:
+            #     delete_transactions_by_journal_id(db=db, id=id)
 
             transaction = create_transaction(db, id, data)
 
         transactions.append(transaction)
+
+    for existing_transaction in existing_transactions:
+        if existing_transaction.id not in [data.id for data in journal.transactions]:
+            db.delete(existing_transaction)
 
     db.add_all(transactions)
     db.commit()
@@ -583,7 +598,7 @@ def delete_journal(db: Session, id: int):
         return journal_db
 
 
-def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: int = 0, chart_id: int = 0, company_id: int = 0, department_id: int = 0, supplier_id: int = 0):
+def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: int = 0, chart_id: int = 0, company_ids: List[int] = None, department_ids: List[int] = None, supplier_id: int = 0):
     frames = db.query(models.Frame).options(joinedload(
         models.Frame.charts).joinedload(models.Chart.transaction)).all()
 
@@ -591,8 +606,13 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
         raise HTTPException(
             status_code=404, detail="Both from_date and to_date must be provided and not empty.")
 
-    from_date = datetime.strptime(from_date, '%Y-%m-%d')
-    to_date = datetime.strptime(to_date, '%Y-%m-%d')
+     # Validate date format
+    try:
+        from_date = datetime.strptime(from_date, '%Y-%m-%d')
+        to_date = datetime.strptime(to_date, '%Y-%m-%d')
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail="Invalid date format. Use 'YYYY-MM-DD' format.")
 
     frames = [{
         "id": frame.id,
@@ -600,6 +620,7 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
         "report_type": frame.report_type,
         "code": frame.code,
         "created_at": frame.created_at,
+        "is_deleted": frame.is_deleted,
         "parent_id": 0,
         "sub_accounts": [{
             "id": chart.id,
@@ -620,8 +641,8 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
                 "is_supplier": transaction.journal.is_supplier,
                 "amount": transaction.amount,
                 "is_type": transaction.is_type,
-            } for transaction in chart.transaction if ((company_id == 0 or transaction.journal.company_id == company_id) and
-                                                       (department_id == 0 or transaction.journal.department_id == department_id) and
+            } for transaction in chart.transaction if ((not company_ids or transaction.journal.company_id in company_ids) and
+                                                       (not department_ids or transaction.journal.department_id in department_ids) and
                                                        (supplier_id == 0 or transaction.journal.supplier_id == supplier_id) and
                                                        (from_date <= transaction.journal.date <=
                                                         to_date + timedelta(days=1))

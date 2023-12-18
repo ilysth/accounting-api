@@ -598,7 +598,7 @@ def delete_journal(db: Session, id: int):
         return journal_db
 
 
-def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: int = 0, chart_id: int = 0, company_id: int = 0, department_id: int = 0, supplier_id: int = 0):
+def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: int = 0, chart_id: int = 0, company_ids: List[int] = None, department_ids: List[int] = None, supplier_id: int = 0):
     frames = db.query(models.Frame).options(joinedload(
         models.Frame.charts).joinedload(models.Chart.transaction)).all()
 
@@ -606,8 +606,13 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
         raise HTTPException(
             status_code=404, detail="Both from_date and to_date must be provided and not empty.")
 
-    from_date = datetime.strptime(from_date, '%Y-%m-%d')
-    to_date = datetime.strptime(to_date, '%Y-%m-%d')
+     # Validate date format
+    try:
+        from_date = datetime.strptime(from_date, '%Y-%m-%d')
+        to_date = datetime.strptime(to_date, '%Y-%m-%d')
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail="Invalid date format. Use 'YYYY-MM-DD' format.")
 
     frames = [{
         "id": frame.id,
@@ -636,8 +641,8 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
                 "is_supplier": transaction.journal.is_supplier,
                 "amount": transaction.amount,
                 "is_type": transaction.is_type,
-            } for transaction in chart.transaction if ((company_id == 0 or transaction.journal.company_id == company_id) and
-                                                       (department_id == 0 or transaction.journal.department_id == department_id) and
+            } for transaction in chart.transaction if ((not company_ids or transaction.journal.company_id in company_ids) and
+                                                       (not department_ids or transaction.journal.department_id in department_ids) and
                                                        (supplier_id == 0 or transaction.journal.supplier_id == supplier_id) and
                                                        (from_date <= transaction.journal.date <=
                                                         to_date + timedelta(days=1))

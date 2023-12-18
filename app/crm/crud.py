@@ -232,7 +232,7 @@ def update_company(db: Session, contact_id: int, company: schemas.Company):
     if company.company_id != contact_id:
         db_item.company_id = company.company_id
 
-        next_db = next(crm.get_db())
+        next_db = crm.get_db()
         create_relationship(next_db, company.company_id, contact_id)
 
     db.commit()

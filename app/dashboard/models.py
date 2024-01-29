@@ -47,3 +47,5 @@ class User(Base):
     creation_date = Column(DateTime, default=datetime.datetime.now)
     creation_update = Column(DateTime, nullable=True)
     is_superuser = Column(Boolean)
+    reg_apps = Column(String(length=255))
+    client = Column(String(length=255))

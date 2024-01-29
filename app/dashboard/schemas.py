@@ -93,6 +93,8 @@ class UserBase(BaseModel):
     country: str = None
     creation_update: Optional[datetime] = None
     is_superuser: bool = 0
+    reg_apps: Optional[str] = None
+    client: Optional[str] = None
 
 
 class UserCreate(UserBase):

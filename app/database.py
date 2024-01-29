@@ -15,7 +15,7 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
 
 database_names = [
-    "shydans_db",
+    "shydans_db"
 ]
 
 # Create a connection to the MySQL server then create databases that don't exist.
@@ -36,7 +36,7 @@ mysql_connection.close()
 databases = {}
 for db_name in database_names:
     db_connect = f"mysql+mysqlconnector://root:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{db_name}"
-    engine = create_engine(db_connect, pool_pre_ping=True)
+    engine = create_engine(db_connect, pool_pre_ping=True, pool_size=20, max_overflow=0)
     databases[db_name] = sessionmaker(
         autocommit=False, autoflush=True, bind=engine)
 

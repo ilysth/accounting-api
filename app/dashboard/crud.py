@@ -109,6 +109,8 @@ def update_user(db: Session, id: int, user: schemas.UserCreate):
     db_user.terminal_storage = user.terminal_storage
     db_user.terminal_workspace_id = user.terminal_workspace_id
     db_user.is_superuser = user.is_superuser
+    db_user.reg_apps = user.reg_apps
+    db_user.client = user.client
 
     db.commit()
     db.refresh(db_user)

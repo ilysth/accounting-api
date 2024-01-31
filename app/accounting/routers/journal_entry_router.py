@@ -93,7 +93,7 @@ async def delete_journal(id: int, db: Session = Depends(get_db)):
 #     return crud.delete_transaction_credit(db=db, id=id)
 
 
-@router.post("/import-journals", status_code=status.HTTP_201_CREATED)
+@router.post("/import-journals/", status_code=status.HTTP_201_CREATED)
 async def import_journals(
     csv_journals: list[schemas.JournalCreate], db: Session = Depends(get_db)
 ):

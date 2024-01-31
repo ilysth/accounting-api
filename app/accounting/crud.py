@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.accounting import schemas, models
 from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
 
 def get_frames(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
@@ -641,12 +642,12 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
                 "is_supplier": transaction.journal.is_supplier,
                 "amount": transaction.amount,
                 "is_type": transaction.is_type,
-            } for transaction in chart.transaction if ((not company_ids or transaction.journal.company_id in company_ids) and
-                                                       (not department_ids or transaction.journal.department_id in department_ids) and
-                                                       (supplier_id == 0 or transaction.journal.supplier_id == supplier_id) and
-                                                       (from_date <= transaction.journal.date <=
-                                                        to_date + timedelta(days=1))
-                                                       )]
+            } for transaction in chart.transaction if transaction.journal is not None and
+                ((not company_ids or transaction.journal.company_id in company_ids) and
+                 (not department_ids or transaction.journal.department_id in department_ids) and
+                 (supplier_id == 0 or transaction.journal.supplier_id == supplier_id) and
+                 (from_date <= transaction.journal.date <= to_date + timedelta(days=1)))]
+
         } for chart in frame.charts if ((chart_id == 0 or chart.id == chart_id))]
     } for frame in frames if ((frame_id == 0 or frame.id == frame_id))]
 
@@ -671,11 +672,89 @@ def insert_journal_from_csv(db: Session, csv_journal: schemas.JournalCreate):
     return db_journal
 
 
-def import_journals(db: Session, csv_journals: list[schemas.JournalCreate]) -> None:
-    for journal in csv_journals:
-        insert_journal_from_csv(db=db, csv_journal=journal)
+# def import_journals(db: Session, csv_journals: list[schemas.JournalCreate]) -> None:
+#     for journal in csv_journals:
+#         insert_journal_from_csv(db=db, csv_journal=journal)
+
+# # Generate Invoice Number Only for QR Bill Generation Process in Billing
 
 
+# def create_invoice_number(db: Session, invoice: schemas.InvoiceCreate):
+#     # from xojo: 2023-03-13 03:36:22
+#     # disallow duplicate invoice number
+#     try:
+#         db_invoice = models.Invoice(
+#             project_id=invoice.project_id,
+#             client_id=invoice.client_id,
+#             invoice_number=generate_invoice_number_for_qrbill(
+#                 invoice.invoice_date, invoice.client_id, invoice.project_id
+#             ),
+#             amount=0,
+#             qr_reference_number="",
+#             invoice_date=invoice.invoice_date,
+#             invoice_due_date=invoice.invoice_due_date,
+#             invoice_status="",
+#         )
+
+#         db.add(db_invoice)
+#         db.commit()
+#         db.refresh(db_invoice)
+
+#         return db_invoice
+
+#     except IntegrityError:
+#         db.rollback()
+#         raise HTTPException(
+#             status_code=409, detail="Invoice number already exists.")
+
+#     # Invoice Number Generator
+
+
+# def generate_invoice_number_for_qrbill(
+#     invoice_date: str = "", client_id: int = 0, project_id: int = 0
+# ):
+#     invoice_number = 0
+
+#     # year = str(datetime.today().year)
+#     # month = str(datetime.today().strftime("%m"))
+#     # day = str(datetime.today().strftime("%d"))
+#     # hour = str(datetime.today().strftime("%H"))
+#     # minutes = str(datetime.today().strftime("%M"))
+#     # seconds = str(datetime.today().strftime("%S"))
+#     # mseconds = str(datetime.today().strftime("%f"))
+
+#     # date = year + month + day
+#     # dtime = hour + minutes + seconds #+ mseconds
+
+#     str_client_id = str(client_id)
+#     str_project_id = str(project_id)
+
+#     inv_client_id = ""
+#     for i in range(4 - len(str_client_id)):
+#         inv_client_id = inv_client_id + "0"
+
+#     inv_project_id = ""
+#     for i in range(3 - len(str_project_id)):
+#         inv_project_id = inv_project_id + "0"
+
+#     # invoice_number = date + dtime + "-" + inv_client_id + str_client_id + "-" + inv_project_id + str_project_id
+
+#     invoice_date = str(invoice_date).replace("-", "")
+#     invoice_date = str(invoice_date).replace(" ", "")
+#     invoice_date = str(invoice_date).replace(":", "")
+#     # invoice_date = invoice_date.replace(",", "")
+
+#     invoice_number = (
+#         invoice_date
+#         + "-"
+#         + inv_client_id
+#         + str_client_id
+#         + "-"
+#         + inv_project_id
+#         + str_project_id
+#     )
+
+#     return invoice_number
 # def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
 #     supplier_db = db.query(models.Supplier)
 

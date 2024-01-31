@@ -36,7 +36,8 @@ mysql_connection.close()
 databases = {}
 for db_name in database_names:
     db_connect = f"mysql+mysqlconnector://root:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{db_name}"
-    engine = create_engine(db_connect, pool_pre_ping=True, pool_size=20, max_overflow=0)
+    engine = create_engine(db_connect, pool_pre_ping=True,
+                           pool_size=20, max_overflow=0)
     databases[db_name] = sessionmaker(
         autocommit=False, autoflush=True, bind=engine)
 
@@ -64,7 +65,8 @@ class DatabaseSessionMaker:
         if self.database_name not in database_names:
             raise KeyError("Database name invalid")
 
-        return self._get_db(self.database_name)
-
-    def _get_db(self, database_name):
-        return next(get_db(database_name))
+        db = databases[self.database_name]()
+        try:
+            yield db
+        finally:
+            db.close()

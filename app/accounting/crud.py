@@ -672,9 +672,9 @@ def insert_journal_from_csv(db: Session, csv_journal: schemas.JournalCreate):
     return db_journal
 
 
-# def import_journals(db: Session, csv_journals: list[schemas.JournalCreate]) -> None:
-#     for journal in csv_journals:
-#         insert_journal_from_csv(db=db, csv_journal=journal)
+def import_journals(db: Session, csv_journals: list[schemas.JournalCreate]) -> None:
+    for journal in csv_journals:
+        insert_journal_from_csv(db=db, csv_journal=journal)
 
 # # Generate Invoice Number Only for QR Bill Generation Process in Billing
 

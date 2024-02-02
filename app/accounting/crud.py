@@ -629,6 +629,7 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
             "account_type": chart.account_type,
             "code": chart.code,
             "created_at": chart.created_at,
+            "is_deleted": chart.is_deleted,
             "parent_id": chart.frame_id,
             "transactions": [{
                 "id": transaction.id,
@@ -648,7 +649,8 @@ def get_journals_by_frame(db: Session, from_date: str, to_date: str, frame_id: i
                  (supplier_id == 0 or transaction.journal.supplier_id == supplier_id) and
                  (from_date <= transaction.journal.date <= to_date + timedelta(days=1)))]
 
-        } for chart in frame.charts if ((chart_id == 0 or chart.id == chart_id))]
+        } for chart in frame.charts if ((chart_id == 0 or chart.id == chart_id) and
+                                        chart.is_deleted != 1)]
     } for frame in frames if ((frame_id == 0 or frame.id == frame_id))]
 
     return frames

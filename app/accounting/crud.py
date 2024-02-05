@@ -491,7 +491,7 @@ def create_journal_and_transactions(
     db: Session,
 ):
 
-    journal_db = create_journal(db, journal)
+    journal_db = create_reference_number(db, journal)
     db.add(journal_db)
 
     transactions = []
@@ -678,85 +678,63 @@ def import_journals(db: Session, csv_journals: list[schemas.JournalCreate]) -> N
     for journal in csv_journals:
         insert_journal_from_csv(db=db, csv_journal=journal)
 
-# # Generate Invoice Number Only for QR Bill Generation Process in Billing
+
+def create_reference_number(db: Session, journal: schemas.JournalCreate):
+
+    try:
+        db_journal = models.Journal(
+            company_id=journal.company_id,
+            department_id=journal.department_id,
+            reference_no=generate_reference_number_for_journal(
+                journal.date, journal.company_id
+            ),
+            date=journal.date,
+        )
+
+        db.add(db_journal)
+        db.commit()
+        db.refresh(db_journal)
+
+        return db_journal
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="Reference number already exists.")
 
 
-# def create_invoice_number(db: Session, invoice: schemas.InvoiceCreate):
-#     # from xojo: 2023-03-13 03:36:22
-#     # disallow duplicate invoice number
-#     try:
-#         db_invoice = models.Invoice(
-#             project_id=invoice.project_id,
-#             client_id=invoice.client_id,
-#             invoice_number=generate_invoice_number_for_qrbill(
-#                 invoice.invoice_date, invoice.client_id, invoice.project_id
-#             ),
-#             amount=0,
-#             qr_reference_number="",
-#             invoice_date=invoice.invoice_date,
-#             invoice_due_date=invoice.invoice_due_date,
-#             invoice_status="",
-#         )
+def generate_reference_number_for_journal(
+    journal_date: str = "", company_id: int = 0
+):
+    reference_number = 0
 
-#         db.add(db_invoice)
-#         db.commit()
-#         db.refresh(db_invoice)
+    str_company_id = str(company_id)
+    # str_department_id = str(department_id)
 
-#         return db_invoice
+    inv_company_id = ""
+    for i in range(4 - len(str_company_id)):
+        inv_company_id = inv_company_id + "0"
 
-#     except IntegrityError:
-#         db.rollback()
-#         raise HTTPException(
-#             status_code=409, detail="Invoice number already exists.")
+    # inv_department_id = ""
+    # for i in range(3 - len(str_department_id)):
+    #     inv_department_id = inv_department_id + "0"
 
-#     # Invoice Number Generator
+    journal_date = str(journal_date).replace("-", "")
+    journal_date = str(journal_date).replace(" ", "")
+    journal_date = str(journal_date).replace(":", "")
 
+    reference_number = (
+        journal_date
+        + "-"
+        + inv_company_id
+        + str_company_id
+        # + "-"
+        # + inv_department_id
+        # + str_department_id
+    )
 
-# def generate_invoice_number_for_qrbill(
-#     invoice_date: str = "", client_id: int = 0, project_id: int = 0
-# ):
-#     invoice_number = 0
+    return reference_number
 
-#     # year = str(datetime.today().year)
-#     # month = str(datetime.today().strftime("%m"))
-#     # day = str(datetime.today().strftime("%d"))
-#     # hour = str(datetime.today().strftime("%H"))
-#     # minutes = str(datetime.today().strftime("%M"))
-#     # seconds = str(datetime.today().strftime("%S"))
-#     # mseconds = str(datetime.today().strftime("%f"))
-
-#     # date = year + month + day
-#     # dtime = hour + minutes + seconds #+ mseconds
-
-#     str_client_id = str(client_id)
-#     str_project_id = str(project_id)
-
-#     inv_client_id = ""
-#     for i in range(4 - len(str_client_id)):
-#         inv_client_id = inv_client_id + "0"
-
-#     inv_project_id = ""
-#     for i in range(3 - len(str_project_id)):
-#         inv_project_id = inv_project_id + "0"
-
-#     # invoice_number = date + dtime + "-" + inv_client_id + str_client_id + "-" + inv_project_id + str_project_id
-
-#     invoice_date = str(invoice_date).replace("-", "")
-#     invoice_date = str(invoice_date).replace(" ", "")
-#     invoice_date = str(invoice_date).replace(":", "")
-#     # invoice_date = invoice_date.replace(",", "")
-
-#     invoice_number = (
-#         invoice_date
-#         + "-"
-#         + inv_client_id
-#         + str_client_id
-#         + "-"
-#         + inv_project_id
-#         + str_project_id
-#     )
-
-#     return invoice_number
 # def get_suppliers(db: Session, sort_direction: str = "desc", skip: int = 0, limit: int = 100):
 #     supplier_db = db.query(models.Supplier)
 

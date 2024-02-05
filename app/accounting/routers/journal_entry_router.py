@@ -98,3 +98,11 @@ async def import_journals(
     csv_journals: list[schemas.JournalCreate], db: Session = Depends(get_db)
 ):
     return crud.import_journals(db=db, csv_journals=csv_journals)
+
+
+@router.post("/generate-reference-number/", status_code=status.HTTP_201_CREATED)
+async def create_reference_number(
+    journal: schemas.JournalCreate, db: Session = Depends(get_db)
+):
+    """Create Reference Number only."""
+    return crud.create_reference_number(db=db, journal=journal)

@@ -492,7 +492,7 @@ def create_journal_and_transactions(
     db: Session,
 ):
 
-    if journal.reference_no is not None:
+    if journal.reference_no == "" or journal.reference_no is None:
         journal_db = create_reference_number(db, journal)
     else:
         journal_db = create_journal(db, journal)

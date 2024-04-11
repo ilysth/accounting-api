@@ -1,3 +1,4 @@
+import uuid
 from datetime import timedelta, datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -491,7 +492,11 @@ def create_journal_and_transactions(
     db: Session,
 ):
 
-    journal_db = create_reference_number(db, journal)
+    if journal.reference_no == "" or journal.reference_no is None:
+        journal_db = create_reference_number(db, journal)
+    else:
+        journal_db = create_journal(db, journal)
+
     db.add(journal_db)
 
     transactions = []
@@ -703,34 +708,47 @@ def create_reference_number(db: Session, journal: schemas.JournalCreate):
             status_code=409, detail="Reference number already exists.")
 
 
+reference_count = {}
+
+
 def generate_reference_number_for_journal(
     journal_date: str = "", company_id: int = 0
 ):
-    reference_number = 0
+    global reference_count
 
+    # Generate a UUID
+    unique_id = str(uuid.uuid4()).replace('-', '')
+
+    # Convert company_id to a string
     str_company_id = str(company_id)
-    # str_department_id = str(department_id)
 
+    # Pad company_id with zeros if its length is less than 4
     inv_company_id = ""
     for i in range(4 - len(str_company_id)):
         inv_company_id = inv_company_id + "0"
 
-    # inv_department_id = ""
-    # for i in range(3 - len(str_department_id)):
-    #     inv_department_id = inv_department_id + "0"
-
+    # Remove special characters from journal_date
     journal_date = str(journal_date).replace("-", "")
     journal_date = str(journal_date).replace(" ", "")
     journal_date = str(journal_date).replace(":", "")
 
+    # Create a unique key for the input combination
+    input_key = f"{journal_date}-{company_id}"
+
+    # Increment the reference count for this input combination
+    reference_count[input_key] = reference_count.get(input_key, 0) + 1
+
+    # Concatenate elements to form the reference number
     reference_number = (
         journal_date
         + "-"
         + inv_company_id
         + str_company_id
-        # + "-"
-        # + inv_department_id
-        # + str_department_id
+        + "-"
+        # Add the count to the reference number
+        + str(reference_count[input_key])
+        + "-"
+        + unique_id[:4]  # Take the first 8 characters of the UUID
     )
 
     return reference_number
